@@ -40,7 +40,10 @@ export interface SearchRequest {
   language: string;
   max_stops: number | null;
 }
-export interface FlightTime { date: number[]; time: number[] }
+export interface FlightTime {
+  date: number[];
+  time: number[];
+}
 export interface Segment {
   from_airport: { code: string; name: string };
   to_airport: { code: string; name: string };
@@ -57,7 +60,10 @@ export interface Flight {
   flights: Segment[];
   carbon: { emission: number; typical_on_route: number };
 }
-export interface CodeName { code: string; name: string }
+export interface CodeName {
+  code: string;
+  name: string;
+}
 export interface SearchResponse {
   flights: Flight[];
   metadata: { airlines: CodeName[]; alliances: CodeName[] };

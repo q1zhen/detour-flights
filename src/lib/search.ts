@@ -7,56 +7,106 @@ export function localDate(offset = 0) {
 }
 export function initialValues(): SearchValues {
   return {
-    trip: 'round-trip', seat: 'economy', from: '', to: '',
-    departure: localDate(14), returnDate: localDate(21),
+    trip: 'round-trip',
+    seat: 'economy',
+    from: '',
+    to: '',
+    departure: localDate(14),
+    returnDate: localDate(21),
     passengers: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
-    currency: 'USD', language: 'en-US', stops: 'any',
-    outboundStops: 'inherit', returnStops: 'inherit', outboundAirlines: '', returnAirlines: '',
+    currency: 'USD',
+    language: 'en-US',
+    stops: 'any',
+    outboundStops: 'inherit',
+    returnStops: 'inherit',
+    outboundAirlines: '',
+    returnAirlines: '',
   };
 }
 export function airlineCodes(value: string) {
-  return [...new Set(value.toUpperCase().split(/[\s,]+/).filter(Boolean))];
+  return [
+    ...new Set(
+      value
+        .toUpperCase()
+        .split(/[\s,]+/)
+        .filter(Boolean),
+    ),
+  ];
 }
 function validDate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(value)) &&
+    new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value
+  );
 }
 export function validateSearch(values: SearchValues): string[] {
   const errors: string[] = [];
   const from = values.from.trim().toUpperCase();
   const to = values.to.trim().toUpperCase();
-  if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to)) errors.push('Enter a three-letter airport code for both airports (for example, JFK and LAX).');
+  if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to))
+    errors.push('Enter a three-letter airport code for both airports (for example, JFK and LAX).');
   if (from && from === to) errors.push('Choose different departure and arrival airports.');
   if (!validDate(values.departure)) errors.push('Choose a valid departure date.');
   if (values.trip === 'round-trip') {
     if (!validDate(values.returnDate)) errors.push('Choose a valid return date.');
-    else if (values.returnDate < values.departure) errors.push('Your return date must be on or after your departure date.');
+    else if (values.returnDate < values.departure)
+      errors.push('Your return date must be on or after your departure date.');
   }
   const counts = Object.values(values.passengers);
-  if (counts.some((n) => !Number.isInteger(n) || n < 0 || n > 9) || counts.reduce((a, b) => a + b, 0) < 1 || counts.reduce((a, b) => a + b, 0) > 9) errors.push('Choose 1–9 travelers in total.');
-  if (values.passengers.infants_on_lap > values.passengers.adults) errors.push('Each infant on a lap needs an adult traveler.');
-  if (!/^[A-Z]{3}$/.test(values.currency.trim().toUpperCase())) errors.push('Enter a three-letter currency code, such as USD or EUR.');
+  if (
+    counts.some((n) => !Number.isInteger(n) || n < 0 || n > 9) ||
+    counts.reduce((a, b) => a + b, 0) < 1 ||
+    counts.reduce((a, b) => a + b, 0) > 9
+  )
+    errors.push('Choose 1–9 travelers in total.');
+  if (values.passengers.infants_on_lap > values.passengers.adults)
+    errors.push('Each infant on a lap needs an adult traveler.');
+  if (!/^[A-Z]{3}$/.test(values.currency.trim().toUpperCase()))
+    errors.push('Enter a three-letter currency code, such as USD or EUR.');
   if (!values.language.trim()) errors.push('Enter a Google Flights language code, such as en-US.');
-  for (const [label, value] of [['Outbound', values.outboundAirlines], ...(values.trip === 'round-trip' ? [['Return', values.returnAirlines]] : [])]) {
+  for (const [label, value] of [
+    ['Outbound', values.outboundAirlines],
+    ...(values.trip === 'round-trip' ? [['Return', values.returnAirlines]] : []),
+  ]) {
     const codes = airlineCodes(value);
-    if (codes.length > 50 || codes.some((code) => !/^[A-Z0-9]{2}$/.test(code))) errors.push(`${label} airlines must be up to 50 two-character codes, separated by commas (for example, AA, B6).`);
+    if (codes.length > 50 || codes.some((code) => !/^[A-Z0-9]{2}$/.test(code)))
+      errors.push(
+        `${label} airlines must be up to 50 two-character codes, separated by commas (for example, AA, B6).`,
+      );
   }
   return errors;
 }
 export function buildRequest(values: SearchValues): SearchRequest {
   const from = values.from.trim().toUpperCase();
   const to = values.to.trim().toUpperCase();
-  function leg(date: string, from_airport: string, to_airport: string, stops: LegStopChoice, airlines: string): SearchLeg {
+  function leg(
+    date: string,
+    from_airport: string,
+    to_airport: string,
+    stops: LegStopChoice,
+    airlines: string,
+  ): SearchLeg {
     return {
-      date, from_airport, to_airport,
+      date,
+      from_airport,
+      to_airport,
       ...(stops === 'inherit' ? {} : { max_stops: stops === 'any' ? null : Number(stops) }),
       ...(airlineCodes(airlines).length ? { airlines: airlineCodes(airlines) } : {}),
     };
   }
   return {
-    flights: [leg(values.departure, from, to, values.outboundStops, values.outboundAirlines),
-      ...(values.trip === 'round-trip' ? [leg(values.returnDate, to, from, values.returnStops, values.returnAirlines)] : [])],
-    trip: values.trip, seat: values.seat, passengers: { ...values.passengers },
-    currency: values.currency.trim().toUpperCase(), language: values.language.trim(),
+    flights: [
+      leg(values.departure, from, to, values.outboundStops, values.outboundAirlines),
+      ...(values.trip === 'round-trip'
+        ? [leg(values.returnDate, to, from, values.returnStops, values.returnAirlines)]
+        : []),
+    ],
+    trip: values.trip,
+    seat: values.seat,
+    passengers: { ...values.passengers },
+    currency: values.currency.trim().toUpperCase(),
+    language: values.language.trim(),
     max_stops: values.stops === 'any' ? null : Number(values.stops),
   };
 }
