@@ -73,21 +73,19 @@ export default function App() {
             <Callout.Icon>
               <ExclamationTriangleIcon />
             </Callout.Icon>
-            <Callout.Text asChild>
-              <div>
-                <strong>{error.message}</strong>
-                {error.issues.length > 0 && (
-                  <ul>
-                    {error.issues.map((issue, index) => (
-                      <li key={index}>{issue}</li>
-                    ))}
-                  </ul>
-                )}
-                <span className="error-help">
-                  Your search settings are saved above. Adjust them or try searching again.
-                </span>
-              </div>
-            </Callout.Text>
+            <div className="callout-message">
+              <strong>{error.message}</strong>
+              {error.issues.length > 0 && (
+                <ul>
+                  {error.issues.map((issue, index) => (
+                    <li key={index}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+              <span className="error-help">
+                Your search settings are saved above. Adjust them or try searching again.
+              </span>
+            </div>
           </Callout.Root>
         )}
         {cancelled && (

@@ -132,16 +132,14 @@ export function SearchForm({
           <Callout.Icon>
             <ExclamationTriangleIcon />
           </Callout.Icon>
-          <Callout.Text asChild>
-            <div>
-              <span>Please check your search.</span>
-              <ul>
-                {errors.map((error) => (
-                  <li key={error}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          </Callout.Text>
+          <div className="callout-message">
+            <span>Please check your search.</span>
+            <ul>
+              {errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
+          </div>
         </Callout.Root>
       )}
       <div className="search-bottom">
