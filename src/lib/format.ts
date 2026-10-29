@@ -1,4 +1,4 @@
-import type { Flight, FlightTime } from './types';
+import type { Flight, FlightTime, Segment } from './types';
 
 export function formatPrice(price: number, currency: string) {
   if (!Number.isFinite(price) || price <= 0) return 'Price unavailable';
@@ -55,8 +55,12 @@ export function formatDuration(minutes: number) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 export function flightMinutes(flight: Flight) {
-  return flight.flights?.length && flight.flights.every((segment) => segment.duration > 0)
-    ? flight.flights.reduce((sum, segment) => sum + segment.duration, 0)
+  return segmentMinutes(flight.flights);
+}
+export function segmentMinutes(segments: Segment[]) {
+  return segments?.length &&
+    segments.every((segment) => Number.isFinite(segment.duration) && segment.duration > 0)
+    ? segments.reduce((sum, segment) => sum + segment.duration, 0)
     : Infinity;
 }
 export function bookingUrl(value: string | null) {

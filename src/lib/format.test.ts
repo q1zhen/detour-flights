@@ -10,6 +10,7 @@ import {
   formatTime,
 } from './format';
 import type { Flight } from './types';
+import { roundTripFlight } from '../test/fixtures';
 
 describe('honest result formatting', () => {
   it('never presents missing prices or durations as free or instant flights', () => {
@@ -55,4 +56,8 @@ describe('honest result formatting', () => {
     expect(bookingUrl('https://www.google.com.evil.test/travel/flights')).toBeNull();
     expect(bookingUrl('https://www.google.com/url?q=https://evil.test')).toBeNull();
   });
+});
+
+it('sorts round trips by all segment flight time, excluding the stay and layovers', () => {
+  expect(flightMinutes(roundTripFlight)).toBe(660);
 });

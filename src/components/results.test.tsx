@@ -8,6 +8,7 @@ import { FlightCard } from './FlightCard';
 import { FlightResults } from './FlightResults';
 import { buildRequest, initialValues } from '../lib/search';
 import type { Flight } from '../lib/types';
+import { roundTripFlight } from '../test/fixtures';
 
 const emptyFlight: Flight = {
   type: '',
@@ -45,7 +46,7 @@ describe('result rendering edge cases', () => {
     expect(html).toContain('American');
     expect(html).toContain('Oneworld');
   });
-  it('explains outbound selection for round trips and escapes upstream labels', () => {
+  it('links to the complete round trip and escapes upstream labels', () => {
     const html = renderToStaticMarkup(
       <FlightCard
         flight={{
@@ -58,10 +59,82 @@ describe('result rendering edge cases', () => {
         cheapest={false}
       />,
     );
-    expect(html).toContain('Select outbound');
-    expect(html).toContain('then select a return');
+    expect(html).toContain('View round trip');
+    expect(html).toContain('both flights selected');
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('rel="noopener noreferrer"');
+  });
+});
+
+describe('complete round-trip itineraries', () => {
+  it('separates directions, stops, travel dates, and overnight offsets', () => {
+    const html = renderToStaticMarkup(
+      <FlightCard flight={roundTripFlight} currency="USD" trip="round-trip" cheapest={true} />,
+    );
+    expect(html).toContain('Outbound flight summary');
+    expect(html).toContain('Return flight summary');
+    expect(html).toContain('Outbound flight segments');
+    expect(html).toContain('Return flight segments');
+    expect(html).toContain('Nov 20, 2026');
+    expect(html).toContain('Nov 27, 2026');
+    expect(html).toContain('1 stop');
+    expect(html).toContain('Nonstop');
+    expect(html).not.toContain('2 stops');
+    expect(html).toContain('+1d');
+    expect(html).not.toContain('+8d');
+    expect(html).toContain('6h 0m');
+    expect(html).toContain('5h 0m');
+    expect(html).toContain('11h 0m');
+    expect(html).toContain('542 kg CO₂');
+    expect(html).toContain('both directions');
+    expect(html).toContain('$553');
+    expect(html).toContain('itinerary total');
+    expect(html).toContain('American + JetBlue');
+    expect(html).toContain('tfs=complete-itinerary');
+    expect(html).not.toContain('Select outbound');
+  });
+  it('does not fabricate a direction when upstream arrays are missing', () => {
+    const html = renderToStaticMarkup(
+      <FlightCard flight={emptyFlight} currency="USD" trip="round-trip" cheapest={false} />,
+    );
+    expect(html).toContain('Outbound details unavailable');
+    expect(html).toContain('Return details unavailable');
+    expect(html).not.toContain('Nonstop');
+  });
+  it('retains the one-way display without a return section', () => {
+    const html = renderToStaticMarkup(
+      <FlightCard
+        flight={{
+          ...roundTripFlight,
+          outbound: undefined,
+          return: undefined,
+          flights: roundTripFlight.outbound!,
+        }}
+        currency="USD"
+        trip="one-way"
+        cheapest={false}
+      />,
+    );
+    expect(html).toContain('View flight');
+    expect(html).toContain('1 stop');
+    expect(html).not.toContain('Return flight');
+    expect(html).not.toContain('both directions');
+  });
+  it('counts complete combinations without truncating at 20 outbound options', () => {
+    const html = renderToStaticMarkup(
+      <FlightResults
+        data={{
+          flights: Array.from({ length: 25 }, () => roundTripFlight),
+          metadata: { airlines: [], alliances: [] },
+        }}
+        request={buildRequest({ ...initialValues(), from: 'JFK', to: 'LAX' })}
+        loading={false}
+      />,
+    );
+    expect(html).toMatch(/25.*round-trip combinations/);
+    expect(html.match(/<article /g)).toHaveLength(25);
+    expect(html).toContain('first 20 outbound options');
+    expect(html).not.toContain('outbound segments only');
   });
 });

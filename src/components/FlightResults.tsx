@@ -34,7 +34,9 @@ export function FlightResults({
         <div className="results-heading">
           <h2>Finding your way there…</h2>
           <span className="muted" role="status">
-            Checking live flight options
+            {request?.trip === 'round-trip'
+              ? 'Matching outbound and return flights'
+              : 'Checking live flight options'}
           </span>
         </div>
         {[1, 2, 3].map((key) => (
@@ -93,8 +95,15 @@ export function FlightResults({
         />
       </div>
       <p className="result-count" role="status">
-        {flights.length} {flights.length === 1 ? 'flight option' : 'flight options'} found{' '}
-        <span>· Prices can change</span>
+        {flights.length}{' '}
+        {request.trip === 'round-trip'
+          ? flights.length === 1
+            ? 'round-trip combination'
+            : 'round-trip combinations'
+          : flights.length === 1
+            ? 'flight option'
+            : 'flight options'}{' '}
+        found <span>· Prices can change</span>
       </p>
       {request.trip === 'round-trip' && flights.length > 0 && (
         <Callout.Root size="1" mb="4">
@@ -102,8 +111,9 @@ export function FlightResults({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Round-trip results may show outbound segments only. Select an outbound flight to choose
-            your return on Google Flights. Prices are shown as quoted by the provider.
+            Each result includes outbound and return flights at a total itinerary price. Results
+            cover return combinations for the first 20 outbound options from the provider; other
+            outbound flights may be available.
           </Callout.Text>
         </Callout.Root>
       )}

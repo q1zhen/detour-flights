@@ -58,6 +58,8 @@ export interface Flight {
   google_flights_url: string | null;
   airlines: string[];
   flights: Segment[];
+  outbound?: Segment[];
+  return?: Segment[];
   carbon: { emission: number; typical_on_route: number };
 }
 export interface CodeName {
