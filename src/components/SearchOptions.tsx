@@ -25,7 +25,6 @@ export function SearchOptions({
     values.stops !== 'any' ||
     values.outboundStops !== 'inherit' ||
     values.outboundAirlines ||
-    (values.trip === 'round-trip' && (values.returnStops !== 'inherit' || values.returnAirlines)) ||
     values.currency !== 'USD' ||
     values.language !== 'en-US';
   return (
@@ -81,21 +80,12 @@ export function SearchOptions({
         </p>
         <div className="leg-options">
           <LegOptions
-            title="Outbound flight"
+            title="Flight"
             stops={values.outboundStops}
             airlines={values.outboundAirlines}
             setStops={(v) => update('outboundStops', v)}
             setAirlines={(v) => update('outboundAirlines', v)}
           />
-          {values.trip === 'round-trip' && (
-            <LegOptions
-              title="Return flight"
-              stops={values.returnStops}
-              airlines={values.returnAirlines}
-              setStops={(v) => update('returnStops', v)}
-              setAirlines={(v) => update('returnAirlines', v)}
-            />
-          )}
         </div>
         <p className="field-help">
           Airlines: two-character codes separated by commas, up to 50 per leg. Leave blank for any

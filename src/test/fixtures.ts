@@ -18,24 +18,12 @@ const outbound: Segment[] = [
     plane_type: 'Airbus A321',
   },
 ];
-const inbound: Segment[] = [
-  {
-    from_airport: { code: 'LAX', name: 'Los Angeles International Airport' },
-    to_airport: { code: 'JFK', name: 'John F. Kennedy International Airport' },
-    departure: { date: [2026, 11, 27], time: [22, 0] },
-    arrival: { date: [2026, 11, 28], time: [6, 0] },
-    duration: 300,
-    plane_type: 'Boeing 787',
-  },
-];
-export const roundTripFlight: Flight = {
+export const oneWayFlight: Flight = {
   type: 'AA',
   price: 553,
   airlines: ['American', 'JetBlue'],
-  flights: [...outbound, ...inbound],
-  outbound,
-  return: inbound,
-  carbon: { emission: 542000, typical_on_route: 677000 },
+  flights: outbound,
+  carbon: { emission: 274000, typical_on_route: 345000 },
   google_flights_url:
     'https://www.google.com/travel/flights/booking?tfs=complete-itinerary&curr=USD',
 };

@@ -10,7 +10,7 @@ import {
   formatTime,
 } from './format';
 import type { Flight } from './types';
-import { roundTripFlight } from '../test/fixtures';
+import { oneWayFlight } from '../test/fixtures';
 
 describe('honest result formatting', () => {
   it('never presents missing prices or durations as free or instant flights', () => {
@@ -58,6 +58,6 @@ describe('honest result formatting', () => {
   });
 });
 
-it('sorts round trips by all segment flight time, excluding the stay and layovers', () => {
-  expect(flightMinutes(roundTripFlight)).toBe(660);
+it('sorts connecting flights by segment flight time, excluding layovers', () => {
+  expect(flightMinutes(oneWayFlight)).toBe(360);
 });

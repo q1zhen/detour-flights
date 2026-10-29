@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Badge, Callout, Skeleton } from '@radix-ui/themes';
-import { InfoCircledIcon, MagnifyingGlassIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
+import { Badge, Skeleton } from '@radix-ui/themes';
+import { MagnifyingGlassIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
 import type { SearchRequest, SearchResponse } from '../lib/types';
 import { flightMinutes, formatSearchDate } from '../lib/format';
 import { FlightCard } from './FlightCard';
@@ -34,9 +34,7 @@ export function FlightResults({
         <div className="results-heading">
           <h2>Finding your way there…</h2>
           <span className="muted" role="status">
-            {request?.trip === 'round-trip'
-              ? 'Matching outbound and return flights'
-              : 'Checking live flight options'}
+            Checking live flight options
           </span>
         </div>
         {[1, 2, 3].map((key) => (
@@ -73,13 +71,11 @@ export function FlightResults({
               {request.flights[0].to_airport}
             </h2>
             <Badge color="gray" variant="soft">
-              {request.trip === 'round-trip' ? 'Round trip' : 'One way'}
+              One way
             </Badge>
           </div>
           <p className="muted">
-            {formatSearchDate(request.flights[0].date)}
-            {request.trip === 'round-trip' &&
-              ` – ${formatSearchDate(request.flights[1].date)}`} · {total}{' '}
+            {formatSearchDate(request.flights[0].date)} · {total}{' '}
             {total === 1 ? 'traveler' : 'travelers'} · {request.seat.replace('-', ' ')}
           </p>
         </div>
@@ -95,28 +91,10 @@ export function FlightResults({
         />
       </div>
       <p className="result-count" role="status">
-        {flights.length}{' '}
-        {request.trip === 'round-trip'
-          ? flights.length === 1
-            ? 'round-trip combination'
-            : 'round-trip combinations'
-          : flights.length === 1
-            ? 'flight option'
-            : 'flight options'}{' '}
-        found <span>· Prices can change</span>
+        {flights.length} {flights.length === 1 ? 'flight option' : 'flight options'} found{' '}
+        <span>· Prices can change</span>
       </p>
-      {request.trip === 'round-trip' && flights.length > 0 && (
-        <Callout.Root size="1" mb="4">
-          <Callout.Icon>
-            <InfoCircledIcon />
-          </Callout.Icon>
-          <Callout.Text>
-            Each result includes outbound and return flights at a total itinerary price. Results
-            cover return combinations for the first 20 outbound options from the provider; other
-            outbound flights may be available.
-          </Callout.Text>
-        </Callout.Root>
-      )}
+
       {flights.length ? (
         <div className="flight-list">
           {flights.map((flight, index) => (
@@ -124,7 +102,6 @@ export function FlightResults({
               key={`${flight.google_flights_url || JSON.stringify(flight)}-${index}`}
               flight={flight}
               currency={request.currency}
-              trip={request.trip}
               cheapest={flight.price === cheapest}
             />
           ))}

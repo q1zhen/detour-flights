@@ -7,20 +7,16 @@ export function localDate(offset = 0) {
 }
 export function initialValues(): SearchValues {
   return {
-    trip: 'round-trip',
     seat: 'economy',
     from: '',
     to: '',
     departure: localDate(14),
-    returnDate: localDate(21),
     passengers: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
     currency: 'USD',
     language: 'en-US',
     stops: 'any',
     outboundStops: 'inherit',
-    returnStops: 'inherit',
     outboundAirlines: '',
-    returnAirlines: '',
   };
 }
 export function airlineCodes(value: string) {
@@ -48,11 +44,7 @@ export function validateSearch(values: SearchValues): string[] {
     errors.push('Enter a three-letter airport code for both airports (for example, JFK and LAX).');
   if (from && from === to) errors.push('Choose different departure and arrival airports.');
   if (!validDate(values.departure)) errors.push('Choose a valid departure date.');
-  if (values.trip === 'round-trip') {
-    if (!validDate(values.returnDate)) errors.push('Choose a valid return date.');
-    else if (values.returnDate < values.departure)
-      errors.push('Your return date must be on or after your departure date.');
-  }
+
   const counts = Object.values(values.passengers);
   if (
     counts.some((n) => !Number.isInteger(n) || n < 0 || n > 9) ||
@@ -65,10 +57,7 @@ export function validateSearch(values: SearchValues): string[] {
   if (!/^[A-Z]{3}$/.test(values.currency.trim().toUpperCase()))
     errors.push('Enter a three-letter currency code, such as USD or EUR.');
   if (!values.language.trim()) errors.push('Enter a Google Flights language code, such as en-US.');
-  for (const [label, value] of [
-    ['Outbound', values.outboundAirlines],
-    ...(values.trip === 'round-trip' ? [['Return', values.returnAirlines]] : []),
-  ]) {
+  for (const [label, value] of [['Outbound', values.outboundAirlines]]) {
     const codes = airlineCodes(value);
     if (codes.length > 50 || codes.some((code) => !/^[A-Z0-9]{2}$/.test(code)))
       errors.push(
@@ -96,13 +85,8 @@ export function buildRequest(values: SearchValues): SearchRequest {
     };
   }
   return {
-    flights: [
-      leg(values.departure, from, to, values.outboundStops, values.outboundAirlines),
-      ...(values.trip === 'round-trip'
-        ? [leg(values.returnDate, to, from, values.returnStops, values.returnAirlines)]
-        : []),
-    ],
-    trip: values.trip,
+    flights: [leg(values.departure, from, to, values.outboundStops, values.outboundAirlines)],
+    trip: 'one-way',
     seat: values.seat,
     passengers: { ...values.passengers },
     currency: values.currency.trim().toUpperCase(),

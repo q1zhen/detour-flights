@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SearchError, searchFlights } from './api';
 import { buildRequest, initialValues } from './search';
-import { roundTripFlight } from '../test/fixtures';
+import { oneWayFlight } from '../test/fixtures';
 
 const request = buildRequest({ ...initialValues(), from: 'JFK', to: 'LAX' });
 const empty = { flights: [], metadata: { airlines: [], alliances: [] } };
@@ -76,16 +76,13 @@ describe('API requests and failure handling', () => {
   });
 });
 
-it('preserves complete round-trip pairs, exact fares, and booking URLs', async () => {
+it('preserves one-way segments, exact fares, and booking URLs', async () => {
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(Response.json({ flights: [roundTripFlight], metadata: empty.metadata })),
+    vi.fn().mockResolvedValue(Response.json({ flights: [oneWayFlight], metadata: empty.metadata })),
   );
   const response = await searchFlights(request);
-  expect(response.flights[0]).toEqual(roundTripFlight);
-  expect(response.flights[0].outbound).toHaveLength(2);
-  expect(response.flights[0].return).toHaveLength(1);
+  expect(response.flights[0]).toEqual(oneWayFlight);
+  expect(response.flights[0].flights).toHaveLength(2);
   expect(response.flights[0].price).toBe(553);
 });

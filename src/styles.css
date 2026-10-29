@@ -210,16 +210,6 @@ h1 > span {
   gap: 16px;
   margin-bottom: 26px;
 }
-.search-toolbar .rt-SegmentedControlRoot {
-  background: #f1f4f9;
-}
-.search-toolbar .rt-SegmentedControlItem {
-  font-size: 12px;
-  min-width: 94px;
-}
-.search-toolbar .rt-SegmentedControlItem[data-state='on'] {
-  color: #285bcf;
-}
 .travel-preferences {
   display: flex;
   gap: 16px;
@@ -1091,11 +1081,6 @@ footer a {
 .flight-directions {
   min-width: 0;
 }
-.flight-direction + .flight-direction {
-  margin-top: 17px;
-  padding-top: 15px;
-  border-top: 1px solid #edf0f5;
-}
 .direction-heading {
   display: flex;
   align-items: center;
@@ -1111,16 +1096,6 @@ footer a {
 }
 .direction-heading > span:last-child {
   margin-left: auto;
-}
-.direction-details > h3 {
-  margin: 0 0 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #405675;
-}
-.direction-details + .direction-details {
-  border-top: 1px solid #e8edf5;
-  padding-top: 18px;
 }
 @media (max-width: 1000px) {
   .flight-main.has-directions {

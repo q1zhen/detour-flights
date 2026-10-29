@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Button, Callout, Flex, IconButton, SegmentedControl, TextField } from '@radix-ui/themes';
+import { Button, Callout, Flex, IconButton, Badge, TextField } from '@radix-ui/themes';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon, SwitchIcon } from '@radix-ui/react-icons';
 import { buildRequest, initialValues, validateSearch } from '../lib/search';
-import type { Cabin, SearchRequest, SearchValues, Trip } from '../lib/types';
+import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
 import { TravelerPicker } from './TravelerPicker';
 import { SearchOptions } from './SearchOptions';
 import { SelectField } from './SelectField';
@@ -41,14 +41,9 @@ export function SearchForm({
     >
       <fieldset className="search-fieldset" disabled={loading}>
         <div className="search-toolbar">
-          <SegmentedControl.Root
-            value={values.trip}
-            onValueChange={(v) => update('trip', v as Trip)}
-            aria-label="Trip type"
-          >
-            <SegmentedControl.Item value="round-trip">Round trip</SegmentedControl.Item>
-            <SegmentedControl.Item value="one-way">One way</SegmentedControl.Item>
-          </SegmentedControl.Root>
+          <Badge size="2" color="blue" variant="soft">
+            One way
+          </Badge>
           <div className="travel-preferences">
             <TravelerPicker value={values.passengers} onChange={(v) => update('passengers', v)} />
             <span className="toolbar-divider" />
@@ -60,7 +55,7 @@ export function SearchForm({
             />
           </div>
         </div>
-        <div className={`route-grid ${values.trip === 'one-way' ? 'one-way' : ''}`}>
+        <div className="route-grid one-way">
           <label className="field route-field">
             <span>From</span>
             <TextField.Root
@@ -108,19 +103,6 @@ export function SearchForm({
               onChange={(e) => update('departure', e.target.value)}
             />
           </label>
-          {values.trip === 'round-trip' && (
-            <label className="field date-field">
-              <span>Return</span>
-              <TextField.Root
-                size="3"
-                type="date"
-                value={values.returnDate}
-                min={values.departure}
-                onInput={(e) => update('returnDate', e.currentTarget.value)}
-                onChange={(e) => update('returnDate', e.target.value)}
-              />
-            </label>
-          )}
         </div>
         <p className="field-help" id="airport-help">
           Use three-letter airport codes, like JFK for New York or LHR for London.

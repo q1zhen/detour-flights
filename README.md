@@ -1,6 +1,8 @@
 # Detour Flights
 
-A simple React + TypeScript flight-search frontend for [gflight.q1z.dev](https://gflight.q1z.dev). UI components use [Radix Themes](https://www.radix-ui.com/themes): selects, segmented controls, popovers, text fields, buttons, badges, callouts, and loading skeletons.
+A simple React + TypeScript flight-search frontend for [gflight.q1z.dev](https://gflight.q1z.dev). UI components use [Radix Themes](https://www.radix-ui.com/themes): selects, popovers, text fields, buttons, badges, callouts, and loading skeletons.
+
+The app currently supports one-way searches only. Round-trip support is temporarily removed.
 
 The browser calls the public API directly. No credentials, API key, backend, or environment variables are needed. There are no mock flight results in the app.
 
@@ -28,7 +30,7 @@ npm run format:check
 
 | API capability                           | Interface                                                                         |
 | ---------------------------------------- | --------------------------------------------------------------------------------- |
-| One-way and round-trip searches          | Trip selector; return airports are reversed automatically                         |
+| One-way searches                         | One departure leg with no return-date controls                                    |
 | All four cabins                          | Economy, premium economy, business, first class                                   |
 | All passenger categories                 | Adults, children, infants in seats, infants on laps; 1–9 travelers                |
 | Overall stop limit                       | Any, nonstop, or up to 1, 2, or 3 stops                                           |
@@ -48,10 +50,7 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 ## Provider limitations reflected in the UI
 
 - Multi-city and open-jaw trips are unsupported by the API and are not offered.
-- Round-trip results include explicit outbound and return segments. Each card shows both directions separately, and its Google Flights link opens booking details with the exact complete itinerary selected.
-- The API expands the first 20 outbound options in provider order and returns every available return combination for those flights. There can be more than 20 results, but the search does not cover every possible outbound option. Failed return lookups fail the entire request; partial results are not shown.
-- Prices are the provider’s total itinerary fares for the exact flight combination, not two separately quoted one-way fares added together. Availability and final booking prices can change.
-- Round-trip emissions and typical-route emissions are already summed across both directions by the API. They are displayed once without double counting.
+- Prices are the provider’s total fares for the selected one-way itinerary. Availability and final booking prices can change.
 - Times are airport-local, with no supplied UTC offsets. The app sums segment flight time and explicitly excludes layovers; it does not invent total journey or connection durations.
 - Missing values such as zero prices, zero durations, empty arrays, and unavailable links have explicit fallbacks.
 - Alliance metadata is displayed for reference; the API does not support alliance filtering.
@@ -60,7 +59,7 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 ## Source layout
 
 - `src/App.tsx`: page composition and request lifecycle.
-- `src/components/SearchForm.tsx`: route, dates, trip type, and validation.
+- `src/components/SearchForm.tsx`: route, departure date, and validation.
 - `src/components/TravelerPicker.tsx`: passenger popover and counters.
 - `src/components/SearchOptions.tsx`: overall and per-leg search filters.
 - `src/components/SelectField.tsx`: reusable typed Radix selector.
@@ -73,6 +72,6 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 
 ## Verification
 
-Automated tests cover request normalization, return-leg reversal, stop inheritance versus explicit null and zero, passenger constraints, airline validation, HTTP/network failures, cancellation, missing upstream data, metadata on empty searches, safe booking URLs, escaped provider content, complete round-trip pair preservation, per-direction stops and overnight offsets, combined flight duration, and more than 20 round-trip combinations.
+Automated tests cover request normalization, one-way request enforcement, stop inheritance versus explicit null and zero, passenger constraints, airline validation, HTTP/network failures, cancellation, missing upstream data, metadata on empty searches, safe booking URLs, escaped provider content, one-way segments and flight duration, and absence of round-trip controls.
 
-Browser checks exercised live one-way and round-trip searches, airline and stop filters, date edits, expandable details, and responsive layouts. No booking is performed by this app.
+Browser checks exercised live flight searches, airline and stop filters, date edits, expandable details, and responsive layouts. No booking is performed by this app.
