@@ -18,7 +18,7 @@ export function FlightDirection({
   const connections = segments.slice(0, -1);
   return (
     <span
-      className={`flight-route${selfTransferIndex !== undefined ? ' self-transfer-route' : ''}`}
+      className={`flight-route${selfTransferIndex !== undefined ? ' self-transfer-route' : ''}${connections.length ? '' : ' nonstop-route'}`}
     >
       <span className="route-overview">
         {segments.length
@@ -31,11 +31,9 @@ export function FlightDirection({
       </span>
       <span className="route-endpoint">
         <strong>{formatTime(first?.departure)}</strong>
+        <span className="sr-only">{first?.fromAirport?.code || '—'}</span>
       </span>
       <span className="route-track">
-        <span className="sr-only">
-          {first?.fromAirport?.code || '—'} to {last?.toAirport?.code || '—'}
-        </span>
         <span className="route-path" aria-hidden="true">
           <span className="endpoint-marker">
             <i className="endpoint-dot" />
@@ -46,6 +44,7 @@ export function FlightDirection({
               className={`connection-marker${index === selfTransferIndex ? ' self-transfer-marker' : ''}`}
               key={index}
             >
+              {index === selfTransferIndex && <em>Self-transfer</em>}
               <i />
               <span>
                 {segment.toAirport?.code || '—'}
@@ -57,11 +56,10 @@ export function FlightDirection({
                       : formatDuration(connectionDurations[index]!)
                     : '—'}
                 </small>
-                {index === selfTransferIndex && <em>Self-transfer</em>}
               </span>
             </span>
           ))}
-          <span className="endpoint-marker endpoint-marker-arrival">
+          <span className="endpoint-marker">
             <i className="endpoint-dot" />
             <span>{last?.toAirport?.code || '—'}</span>
           </span>
@@ -83,6 +81,7 @@ export function FlightDirection({
           {formatTime(last?.arrival)}
           {offset && <sup aria-label={`Arrival date offset ${offset}`}>{offset}</sup>}
         </strong>
+        <span className="sr-only">{last?.toAirport?.code || '—'}</span>
       </span>
     </span>
   );

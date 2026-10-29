@@ -671,18 +671,185 @@
   grid-row: 3;
   margin: 2px 0 0;
 }
-.endpoint-marker {
-  position: relative;
+
+/* Collapsed cards share a route preview above a divided fare footer. */
+.floating-panel .flight-card {
+  container-type: inline-size;
+  border-radius: 12px;
 }
-.endpoint-marker > span {
-  position: absolute;
-  top: 13px;
-  left: 0;
+.floating-panel .flight-row {
+  display: block;
+  padding: 0;
+}
+.floating-panel .flight-route {
+  padding: 8px 16px 2px;
+  gap: 2px;
+  grid-template-columns: 1fr auto 1fr;
+}
+.floating-panel .route-overview {
   font-size: 12px;
-  font-weight: 600;
+  margin: 0;
+  line-height: 16px;
+}
+.floating-panel .route-endpoint > strong {
+  font-size: 21px;
+  font-weight: 700;
+  color: #0c1422;
+}
+.floating-panel .route-endpoint > span {
+  font-size: 13px;
+  font-weight: 650;
+}
+.floating-panel .route-track,
+.floating-panel .self-transfer-route .route-track {
+  margin: 8px 0 0;
+  padding-bottom: 33px;
+}
+.floating-panel .endpoint-dot {
+  width: 7px;
+  height: 7px;
+}
+.floating-panel .connection-marker > i {
+  width: 10px;
+  height: 10px;
+}
+.floating-panel .connection-marker > span {
+  font-size: 13px;
+  font-weight: 650;
+  color: #14233a;
+}
+.floating-panel .connection-duration {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.floating-panel .self-transfer-marker > em {
+  position: absolute;
+  bottom: 15px;
+  color: #0664df;
+  font-size: 11px;
+  font-weight: 650;
+}
+.flight-summary-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 12px;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #e0e5ec;
+  padding: 7px 10px;
+}
+.floating-panel .flight-summary-footer > .flight-meta,
+.floating-panel .flight-summary-footer > .flight-price,
+.floating-panel .flight-summary-footer > .details-chevron {
+  grid-row: auto;
+  grid-column: auto;
+}
+.floating-panel .flight-summary-footer .flight-meta {
+  gap: 4px;
+}
+.floating-panel .flight-summary-footer .flight-meta > span {
+  font-size: 13px;
+}
+.floating-panel .flight-summary-footer .flight-price {
+  border-left: 1px solid #e0e5ec;
+  padding-left: 10px;
+  align-self: stretch;
+  justify-content: center;
+}
+.floating-panel .flight-summary-footer .flight-price > strong {
+  font-size: 21px;
+  font-weight: 700;
+  color: #0c1422;
+}
+.floating-panel .cabin-labels .cabin-badge {
+  padding: 2px 4px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.expanded-card-title {
+  display: none;
+}
+/* Direct-child selectors keep each nested ticket independently expandable. */
+.floating-panel .flight-details[open] > .flight-row > .flight-route,
+.floating-panel .flight-details[open] > .flight-row > .flight-summary-footer > .flight-meta {
+  display: none;
+}
+.floating-panel .flight-details[open] > .flight-row > .flight-summary-footer {
+  border-top: 0;
+}
+.floating-panel
+  .flight-details[open]
+  > .flight-row
+  > .flight-summary-footer
+  > .expanded-card-title {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 5px;
+  min-width: 0;
+  font-size: 13px;
   color: #42536b;
 }
-.endpoint-marker-arrival > span {
-  left: auto;
-  right: 0;
+.expanded-card-title > strong {
+  font-weight: 600;
+}
+.expanded-card-title > small {
+  font-size: 12px;
+}
+@container (min-width: 380px) {
+  .floating-panel .route-overview {
+    grid-column: 2;
+    grid-row: 2;
+    padding-top: 3px;
+    font-size: 14px;
+  }
+  .floating-panel .route-endpoint > strong {
+    font-size: 25px;
+  }
+  .floating-panel .flight-route {
+    padding: 10px 12px 2px;
+  }
+  .flight-summary-footer {
+    padding: 7px 12px;
+    gap: 14px;
+  }
+}
+
+.floating-panel .nonstop-route .route-track {
+  margin-top: 8px;
+  padding-bottom: 30px;
+}
+.floating-panel .flight-details > .flight-row > .flight-summary-footer > .details-chevron {
+  transform: none;
+}
+.floating-panel .flight-details[open] > .flight-row > .flight-summary-footer > .details-chevron {
+  transform: rotate(180deg);
+}
+
+.floating-panel .flight-route .route-endpoint {
+  gap: 1px;
+}
+.floating-panel .flight-summary-footer .cabin-labels {
+  gap: 3px;
+}
+.floating-panel .flight-summary-footer .flight-price {
+  gap: 3px;
+}
+
+.floating-panel .endpoint-marker {
+  position: relative;
+}
+.floating-panel .endpoint-marker > span {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #14233a;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 16px;
+}
+
+.floating-panel .self-transfer-route .route-track {
+  margin-top: 17px;
 }

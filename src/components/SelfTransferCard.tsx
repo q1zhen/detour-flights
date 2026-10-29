@@ -55,27 +55,33 @@ export function SelfTransferCard({
             ]}
             selfTransferIndex={result.leg1.segments.length - 1}
           />
-          <span className="flight-meta">
-            <span>{airlines || 'Airline unavailable'}</span>
-            <span className="cabin-labels">
-              <CabinBadge cabin={result.leg1Cabin} ticket={1} />
-              <CabinBadge cabin={result.leg2Cabin} ticket={2} />
+          <span className="flight-summary-footer">
+            <span className="expanded-card-title">
+              <strong>Self-transfer</strong>
+              <small>{formatDuration(result.durationMinutes)}</small>
             </span>
+            <span className="flight-meta">
+              <span>{airlines || 'Airline unavailable'}</span>
+              <span className="cabin-labels">
+                <CabinBadge cabin={result.leg1Cabin} ticket={1} />
+                <CabinBadge cabin={result.leg2Cabin} ticket={2} />
+              </span>
+            </span>
+            <span className="flight-price">
+              <strong>{formatPrice(result.price, currency)}</strong>
+              <span>{currency} · 2 tickets</span>
+              {baselinePrice !== null && (
+                <small className="transfer-savings">
+                  {result.price < baselinePrice
+                    ? `Save ${formatPrice(baselinePrice - result.price, currency)}`
+                    : result.price === baselinePrice
+                      ? 'Same as regular'
+                      : `${formatPrice(result.price - baselinePrice, currency)} above regular`}
+                </small>
+              )}
+            </span>
+            <ChevronDownIcon className="details-chevron" width="18" height="18" />
           </span>
-          <span className="flight-price">
-            <strong>{formatPrice(result.price, currency)}</strong>
-            <span>{currency} · 2 tickets</span>
-            {baselinePrice !== null && (
-              <small className="transfer-savings">
-                {result.price < baselinePrice
-                  ? `Save ${formatPrice(baselinePrice - result.price, currency)}`
-                  : result.price === baselinePrice
-                    ? 'Same as regular'
-                    : `${formatPrice(result.price - baselinePrice, currency)} above regular`}
-              </small>
-            )}
-          </span>
-          <ChevronDownIcon className="details-chevron" width="18" height="18" />
         </summary>
         <div className="flight-details-content transfer-tickets">
           <h3>Ticket 1 · To {result.midpoint}</h3>

@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { Badge, Button } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import type { Cabin, Flight } from '../lib/types';
-import { bookingUrl, flightMinutes, formatPrice } from '../lib/format';
+import { bookingUrl, flightMinutes, formatDuration, formatPrice } from '../lib/format';
 import { FlightDirection } from './FlightDirection';
 import { CabinBadge } from './CabinBadge';
 import { SegmentDetails } from './SegmentDetails';
@@ -53,26 +53,33 @@ export function FlightCard({
               .slice(0, -1)
               .map((_, i) => flight.layovers?.[i]?.durationMinutes)}
           />
-          <span className="flight-meta">
-            <span>{airlines}</span>
-            {cabin && (
-              <span className="cabin-labels">
-                <CabinBadge cabin={cabin} />
-              </span>
-            )}
-          </span>
-          <span className="flight-price">
-            <strong>{formatPrice(flight.price, currency)}</strong>
-            <span>
-              {currency}
-              {cheapest && (
-                <Badge size="1" color="green" variant="soft">
-                  Lowest
-                </Badge>
+          <span className="flight-summary-footer">
+            <span className="expanded-card-title">
+              <strong>{airlines}</strong>
+              <small>{formatDuration(flightMinutes(flight))}</small>
+              {cabin && <CabinBadge cabin={cabin} />}
+            </span>
+            <span className="flight-meta">
+              <span>{airlines}</span>
+              {cabin && (
+                <span className="cabin-labels">
+                  <CabinBadge cabin={cabin} />
+                </span>
               )}
             </span>
+            <span className="flight-price">
+              <strong>{formatPrice(flight.price, currency)}</strong>
+              <span>
+                {currency}
+                {cheapest && (
+                  <Badge size="1" color="green" variant="soft">
+                    Lowest
+                  </Badge>
+                )}
+              </span>
+            </span>
+            <ChevronDownIcon className="details-chevron" width="18" height="18" />
           </span>
-          <ChevronDownIcon className="details-chevron" width="18" height="18" />
         </summary>
         <div className="flight-details-content">
           <div className="details-toolbar">

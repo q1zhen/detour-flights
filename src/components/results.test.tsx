@@ -285,7 +285,7 @@ it('shows a combined timeline and marks only the self-transfer boundary among mu
   expect(summary).toContain('2 stops');
   expect(summary).toContain('ORD');
   expect(summary).toContain(
-    'LAX<small class="connection-duration">2h 0m</small><em>Self-transfer</em>',
+    '<em>Self-transfer</em><i></i><span>LAX<small class="connection-duration">2h 0m</small>',
   );
   expect(summary.match(/self-transfer-marker/g)).toHaveLength(1);
   expect(summary).toContain('29h 0m');

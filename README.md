@@ -30,7 +30,7 @@ Time, layover, and connection filters narrow the results returned by Google; the
 
 ## Results
 
-Compact rows show local times, connections, **total journey duration including layovers**, airlines, cabin class, and fare. Stops and total duration share a line above the route, with each connection’s layover duration below its airport code. Sort by provider order, price, or total journey duration. Expanded details show:
+Compact rows show local times, connections, **total journey duration including layovers**, airlines, cabin class, and fare. Departure/arrival times sit above the timeline; endpoint airport codes sit below their dots, aligned with connection nodes. Stops and total duration sit above the route. Connection codes and layover durations sit below their markers, with the self-transfer label above its blue dot. A divided footer groups airlines/classes separately from the fare. On wider cards, the stop/duration summary sits between the endpoint times. Sort by provider order, price, or total journey duration. Expanded details show:
 
 - A continuous itinerary timeline with local dates/times, airport names, segment duration, flight number, aircraft, and legroom.
 - Plain-text **provider-supplied layover durations**, dotted layover timeline sections, and airport-change notices. Missing durations stay unavailable; the app no longer estimates them from wall clocks.
@@ -81,7 +81,7 @@ Self-transfer cards use the same route timeline, local endpoint times, stop
 markers, total duration and price layout as regular flights. The ticket boundary
 has a distinct **Self-transfer** marker; ordinary connections retain their usual
 markers. Expanding the combined row reveals the two independently expandable
-tickets and their booking links. Every card labels its requested cabin class;
+tickets and their booking links. Expanded cards hide their horizontal route preview; combined trips also hide the aggregate airline/class summary because those details appear in the individual tickets. Compact expanded headers retain the total duration and fare. Every card labels its requested cabin class;
 combined cards label each ticket separately. These labels retain the cabin used
 when pricing, since the API does not return a per-segment cabin field.
 
