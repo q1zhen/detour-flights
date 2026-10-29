@@ -42,9 +42,9 @@ export function TravelerPicker({
             <Flex gap="3" align="center">
               <IconButton
                 type="button"
-                variant="outline"
-                color="gray"
-                size="1"
+                variant="soft"
+                color="blue"
+                size="2"
                 aria-label={`Fewer ${label.toLowerCase()}`}
                 disabled={value[key] === 0}
                 onClick={() => onChange({ ...value, [key]: value[key] - 1 })}
@@ -56,9 +56,9 @@ export function TravelerPicker({
               </Text>
               <IconButton
                 type="button"
-                variant="outline"
-                color="gray"
-                size="1"
+                variant="soft"
+                color="blue"
+                size="2"
                 aria-label={`More ${label.toLowerCase()}`}
                 disabled={total >= 9}
                 onClick={() => onChange({ ...value, [key]: value[key] + 1 })}

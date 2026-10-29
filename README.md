@@ -2,7 +2,7 @@
 
 A simple React + TypeScript flight-search frontend for [gflight.q1z.dev](https://gflight.q1z.dev). UI components use [Radix Themes](https://www.radix-ui.com/themes): selects, popovers, text fields, buttons, badges, callouts, and loading skeletons.
 
-The interface uses compact flight rows, an inline search form, and expandable itinerary timelines. Flight time is labeled “in air” because the API does not supply total elapsed travel time.
+The interface uses compact flight rows, an inline search form, and expandable itinerary timelines. Flight time is labeled “in air”; same-airport layovers are shown separately using local clock differences.
 
 The app currently supports one-way searches only. Round-trip support is temporarily removed.
 
@@ -37,7 +37,7 @@ npm run format:check
 | All passenger categories          | Adults, children, infants in seats, infants on laps; 1–9 travelers                |
 | Stop limit                        | Any, nonstop, or up to 1, 2, or 3 stops                                           |
 | Airline filter                    | Up to 50 two-character codes, including alphanumeric codes                        |
-| Currency and language             | Editable codes with common suggestions; not limited to the suggestions            |
+| Currency and language             | Fixed to USD and en-US; no form controls                                          |
 | Prices and airlines               | Flight cards and expandable details                                               |
 | Every flight segment              | Airport codes/names, departure and arrival dates/times, flight duration, aircraft |
 | Carbon emissions                  | Kilograms of CO₂, typical route emissions, percentage comparison                  |
@@ -52,22 +52,24 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 
 - Multi-city and open-jaw trips are unsupported by the API and are not offered.
 - Prices are the provider’s total fares for the selected one-way itinerary. Availability and final booking prices can change.
-- Times are airport-local, with no supplied UTC offsets. The app sums segment flight time and explicitly excludes layovers; it does not invent total journey or connection durations.
+- Times are airport-local, with no supplied UTC offsets. Flight time excludes layovers. For same-airport connections, layover duration is calculated from the local arrival and next departure date/time; clock changes may affect that calculation. Different-airport transfers and invalid timestamps show duration unavailable.
 - Missing values such as zero prices, zero durations, empty arrays, and unavailable links have explicit fallbacks.
 - Alliance metadata is displayed for reference; the API does not support alliance filtering.
-- Currency and language support, flight availability, and live prices depend on the upstream provider.
+- Searches use USD and English. Flight availability and live prices depend on the upstream provider.
 
 ## Source layout
 
 - `src/App.tsx`: page composition and request lifecycle.
 - `src/components/SearchForm.tsx`: route, departure date, and validation.
 - `src/components/TravelerPicker.tsx`: passenger popover and counters.
-- `src/components/SearchOptions.tsx`: compact stop, airline, currency, and language filters.
+- `src/components/SearchOptions.tsx`: stop and airline filters.
 - `src/components/SelectField.tsx`: reusable typed Radix selector.
 - `src/components/FlightResults.tsx`: result states, sorting, and metadata.
 - `src/components/FlightCard.tsx`: compact expandable rows with price, emissions, timeline, and booking link.
 - `src/components/FlightDirection.tsx`: departure/arrival times and a route line with connection airports.
-- `src/components/SegmentDetails.tsx`: reusable segment timeline with dates, airports, duration, and aircraft.
+- `src/components/SegmentDetails.tsx`: segment events on a shared, continuous timeline rail.
+- `src/components/LayoverDetails.tsx`: highlighted connection duration and airport.
+- `src/lib/layover.ts`: validated, timezone-independent local-clock calculations.
 - `src/components/AppHeader.tsx`: navigation and API health.
 - `src/lib/`: API types/client, request construction, validation, and formatting.
 
@@ -76,3 +78,5 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 Automated tests cover request normalization, one-way request enforcement, stop inheritance versus explicit null and zero, passenger constraints, airline validation, HTTP/network failures, cancellation, missing upstream data, metadata on empty searches, safe booking URLs, escaped provider content, one-way segments and flight duration, and absence of round-trip controls.
 
 Browser checks exercised live flight searches, airline and stop filters, date edits, expandable details, and responsive layouts. No booking is performed by this app.
+
+Dropdown and traveler panels use Radix’s content sizing; full-viewport styles apply only to the root page theme. Browser checks include mouse selection, keyboard expansion, mobile overflow, and continuity of the timeline rail.

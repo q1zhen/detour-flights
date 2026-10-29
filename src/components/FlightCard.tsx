@@ -103,10 +103,7 @@ export function FlightCard({
             <p className="muted">Segment details unavailable</p>
           )}
           <div className="details-footnote">
-            <span>
-              Local times · Layovers use local clock differences
-              {segments.length > 1 && '; clock changes may affect duration'}
-            </span>
+            <span>Local times · Layovers are local-clock estimates</span>
             <span>
               CO₂:{' '}
               {flight.carbon?.emission > 0

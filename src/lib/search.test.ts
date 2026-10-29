@@ -9,7 +9,8 @@ const valid = () => ({
 });
 describe('flight search contract', () => {
   it('normalizes airport codes, fixes locale defaults, and creates one departure leg', () => {
-    const request = buildRequest({ ...valid(), currency: 'eur', language: ' fr ' });
+    const values = { ...valid(), currency: 'eur', language: ' fr ' };
+    const request = buildRequest(values);
     expect(request.flights).toEqual([
       { date: '2027-01-20', from_airport: 'JFK', to_airport: 'LAX' },
     ]);
