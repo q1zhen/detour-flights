@@ -193,7 +193,7 @@ it('renders live midpoint statuses and independently bookable self-transfer tick
       <SelfTransferResults progress={transferProgress} loading error={null} currency="USD" />
     </>,
   );
-  expect(html).toContain('With results');
+  expect(html).toContain('Found');
   expect(html).toContain('Via ORD');
   expect(html).toContain('Save $333');
   expect(html).toContain('2h 0m');
@@ -201,8 +201,8 @@ it('renders live midpoint statuses and independently bookable self-transfer tick
   expect(html).toContain('Ticket 1');
   expect(html).toContain('Ticket 2');
   expect(html.match(/>Google Flights/g)).toHaveLength(2);
-  expect(html).toContain('Matching flights, cheapest midpoint first');
-  expect(html).toContain('Combined fares up to $700');
+  expect(html).toContain('Searching…');
+  expect(html).toContain('Regular fare ceiling: <strong>$700</strong>');
 });
 it('distinguishes partial failures, cancellation and unavailable baseline prices', () => {
   const progress = {
@@ -221,9 +221,9 @@ it('distinguishes partial failures, cancellation and unavailable baseline prices
   const html = renderToStaticMarkup(
     <SelfTransferResults progress={progress} loading={false} error={null} currency="USD" />,
   );
-  expect(html).toContain('Results are partial');
-  expect(html).toContain('No priced regular flights');
-  expect(html).toContain('2 flight records omitted');
+  expect(html).toContain('Partial · 1 failed');
+  expect(html).toContain('No regular fare to compare');
+  expect(html).not.toContain('flight records omitted');
   const cancelled = renderToStaticMarkup(
     <SelfTransferResults
       progress={{ ...progress, phase: 'cancelled' }}
@@ -232,6 +232,6 @@ it('distinguishes partial failures, cancellation and unavailable baseline prices
       currency="USD"
     />,
   );
-  expect(cancelled).toContain('Search cancelled');
+  expect(cancelled).toContain('Cancelled');
   expect(cancelled).not.toContain('No matching self-transfers');
 });

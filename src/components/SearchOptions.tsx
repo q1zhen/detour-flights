@@ -59,7 +59,7 @@ export function SearchOptions({
         </summary>
         <div className="options-grid">
           <div className="field">
-            <label htmlFor="stop-limit">Stops</label>
+            <label htmlFor="stop-limit">Stops · regular / long leg</label>
             <SelectField
               id="stop-limit"
               label="Stops"
@@ -85,7 +85,7 @@ export function SearchOptions({
           </label>
           <div className="field">
             <span>
-              Each layover <small>minutes</small>
+              Within-ticket layover <small>minutes</small>
             </span>
             <div className="layover-inputs">
               <TextField.Root

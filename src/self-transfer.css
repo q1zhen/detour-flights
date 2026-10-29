@@ -14,14 +14,25 @@
 .transfer-options strong {
   font-size: 14px;
 }
-.transfer-options p {
-  font-size: 12px;
-  color: #526176;
-  margin: 4px 0 0;
+.transfer-options > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  align-self: center;
 }
-.transfer-filter-note {
-  grid-column: 1 / -1;
-  padding-bottom: 8px;
+.search-panel .cancel-search {
+  position: static;
+  display: flex;
+  margin: 12px 0 0 auto;
+}
+.midpoint-error {
+  font-size: 11px;
+  margin-top: 6px;
+}
+.midpoint-error > summary {
+  display: list-item;
+  margin-left: 12px;
 }
 .search-workspace {
   display: grid;
@@ -299,9 +310,6 @@
   }
   .transfer-options > div:first-child {
     grid-column: 1 / -1;
-  }
-  .transfer-filter-note {
-    padding-bottom: 26px;
   }
   .transfer-tickets > summary > span {
     float: none;

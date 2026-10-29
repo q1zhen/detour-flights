@@ -197,8 +197,8 @@ describe('range-minimum transfer join', () => {
   });
 });
 
-describe('two-phase self-transfer search', () => {
-  it('prices all long legs first, searches cheapest-first, tightens best and prunes later hubs', async () => {
+describe('progressive self-transfer search', () => {
+  it('prices long legs, tightens best and prunes more expensive ready hubs', async () => {
     const calls: string[] = [];
     const snapshots: TransferProgress[] = [];
     const query: FlightQuery = async (req) => {
@@ -218,7 +218,6 @@ describe('two-phase self-transfer search', () => {
       ]);
     };
     const result = await run(query, { onProgress: (p) => snapshots.push(p) });
-    expect(calls.slice(0, 4).every((c) => !c.startsWith('AAA'))).toBe(true);
     expect(calls).toContain('HAA-BBB:2027-01-21');
     expect(calls.at(-1)).toBe('AAA-HAA:2027-01-20');
     expect(calls).not.toContain('AAA-HBB:2027-01-20');
@@ -468,3 +467,109 @@ it.each([1, 19])(
     expect(req.flights[0].maxStops).toBe(1);
   },
 );
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+it('publishes a ready midpoint while another is still pricing, then searches the later cheaper midpoint', async () => {
+  const slow = deferred<ReturnType<typeof response>>();
+  const snapshots: TransferProgress[] = [];
+  const pending = run(
+    async (req) => {
+      const leg = req.flights[0];
+      if (leg.date !== '2027-01-20') return response([]);
+      if (leg.fromAirport === 'HBB') return slow.promise;
+      return response(
+        leg.fromAirport === 'AAA'
+          ? [flight('AAA', leg.toAirport, 50, '2027-01-20T08:00', '2027-01-20T10:00')]
+          : [flight('HAA', 'BBB', 100, '2027-01-20T12:00', '2027-01-20T18:00')],
+      );
+    },
+    { onProgress: (p) => snapshots.push(p) },
+  );
+  try {
+    await vi.waitFor(() => expect(snapshots.at(-1)?.results.map((r) => r.price)).toEqual([150]));
+    const early = snapshots.at(-1)!;
+    expect(early.phase).toBe('joining');
+    expect(early.midpoints.find((h) => h.code === 'HBB')?.status).toBe('pricing');
+    slow.resolve(response([flight('HBB', 'BBB', 90, '2027-01-20T12:00', '2027-01-20T18:00')]));
+    const final = await pending;
+    expect(final.results.map((r) => r.price)).toEqual([140, 150]);
+    expect(final.midpoints.every((h) => h.status === 'results')).toBe(true);
+    expect(early.results).toHaveLength(1); // snapshots remain stable as more results arrive
+  } finally {
+    slow.resolve(response([]));
+    await pending;
+  }
+});
+it('publishes each matching date immediately and retains those results if a later date fails', async () => {
+  const nextDay = deferred<ReturnType<typeof response>>();
+  const snapshots: TransferProgress[] = [];
+  const pending = run(
+    async (req) => {
+      const leg = req.flights[0];
+      if (leg.fromAirport === 'AAA')
+        return response([flight('AAA', 'HAA', 50, '2027-01-20T08:00', '2027-01-20T20:00')]);
+      if (leg.date === '2027-01-21') return nextDay.promise;
+      return response([flight('HAA', 'BBB', 30, '2027-01-20T23:00', '2027-01-21T00:00')]);
+    },
+    { graph: graph([['HAA', 19]]), onProgress: (p) => snapshots.push(p) },
+  );
+  try {
+    await vi.waitFor(() => expect(snapshots.at(-1)?.results).toHaveLength(1));
+    expect(snapshots.at(-1)?.midpoints[0]).toMatchObject({ status: 'searching', resultCount: 1 });
+    nextDay.reject(new Error('Provider timeout'));
+    const final = await pending;
+    expect(final.results.map((r) => r.price)).toEqual([80]);
+    expect(final.midpoints[0]).toMatchObject({
+      status: 'error',
+      resultCount: 1,
+      message: 'Provider timeout',
+    });
+  } finally {
+    nextDay.resolve(response([]));
+    await pending;
+  }
+});
+it('stops emitting after cancellation while retaining already published results', async () => {
+  const controller = new AbortController();
+  const snapshots: TransferProgress[] = [];
+  const pending = run(
+    async (req, signal) => {
+      const leg = req.flights[0];
+      if (leg.fromAirport === 'HBB')
+        return new Promise((_resolve, reject) => {
+          signal!.addEventListener(
+            'abort',
+            () => reject(new DOMException('Aborted', 'AbortError')),
+            { once: true },
+          );
+        });
+      if (leg.date !== '2027-01-20') return response([]);
+      return response(
+        leg.fromAirport === 'AAA'
+          ? [flight('AAA', 'HAA', 50, '2027-01-20T08:00', '2027-01-20T10:00')]
+          : [flight('HAA', 'BBB', 100, '2027-01-20T12:00', '2027-01-20T18:00')],
+      );
+    },
+    { signal: controller.signal, onProgress: (p) => snapshots.push(p) },
+  );
+  const stopped = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  try {
+    await vi.waitFor(() => expect(snapshots.at(-1)?.results).toHaveLength(1));
+    const count = snapshots.length;
+    controller.abort();
+    await stopped;
+    expect(snapshots).toHaveLength(count);
+    expect(snapshots.at(-1)?.results[0].price).toBe(150);
+  } finally {
+    controller.abort();
+    await stopped;
+  }
+});

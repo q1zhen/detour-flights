@@ -126,7 +126,7 @@ export function SearchForm({
         <div className="transfer-options">
           <div>
             <strong>Self-transfer window</strong>
-            <p>Time between separate tickets at the same airport.</p>
+            <span className="column-tag">Short leg: nonstop</span>
           </div>
           <label className="field">
             <span>Minimum hours</span>
@@ -150,11 +150,6 @@ export function SearchForm({
               onChange={(event) => setMaxTransfer(event.target.value)}
             />
           </label>
-          <p className="transfer-filter-note">
-            The shorter leg must be nonstop. Stop limits apply to the longer ticket; layover limits
-            apply within tickets. Time bars apply to the whole journey. Allowed/blocked connections
-            include the midpoint.
-          </p>
         </div>
       </fieldset>
       {errors.length > 0 && (

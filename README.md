@@ -59,7 +59,7 @@ only the original departure/final arrival. Connection allow/block filters includ
 the midpoint as well as within-ticket connections. The self-transfer buffer is
 independent of within-ticket layover limits.
 
-Implementation follows the two-phase search:
+Each midpoint keeps the long-leg-first search, with pricing and matching overlapped:
 
 1. Use the union of outgoing neighbors of the origin and incoming neighbors of the
    destination, excluding both endpoints. Keep hubs with at least 10 outgoing
@@ -68,20 +68,24 @@ Implementation follows the two-phase search:
    regular searches but cannot be used to place a self-transfer geographically.
 2. Price each hub's longer leg, with no transfer-time restriction. If that is leg
    2, query the requested date and following date; otherwise query leg 1 on the
-   requested date. At most three API calls run concurrently. Repeated requests in
-   one search share a promise; no cross-search price cache is retained.
-3. Process hubs in ascending cheapest long-leg price. Stop when that price is at
-   least the best valid fare found (initially the cheapest priced regular flight).
-   Query the other leg over the envelope of feasible arrival/departure times.
-   For short leg 2, query every local departure date intersecting the window,
-   including dates beyond the next day when necessary.
+   requested date. At most three API calls run concurrently across both pricing
+   and matching. Short-leg queries get the next free request slot. Repeated
+   requests in one search share a promise; no cross-search price cache is retained.
+3. Match the cheapest currently priced hub immediately, while other hubs continue
+   pricing. Skip a priced hub if its long-leg fare is at least the best valid fare
+   found (initially the cheapest priced regular flight). Never prune an unpriced
+   hub; re-evaluate it when its price arrives. Query the other leg over the envelope
+   of feasible arrival/departure times. For short leg 2, query every local departure
+   date intersecting the window, including dates beyond the next day when needed.
 4. The API has only time-of-day filters. Fetch whole local days and apply absolute
    transfer windows in the browser. Binary-search inclusive arrival bounds and
    use a segment tree to select the cheapest eligible leg 1 for each leg 2.
    Complexity is `O((n + m) log n)` with `O(n)` additional index space.
 5. Exclude totals above the **highest priced regular result** (equal totals are
-   allowed), update the best fare, and publish incremental results. If the regular
-   list is empty or has no usable prices, search without a comparison ceiling and
+   allowed), update the best fare, and publish matches after each short-leg response,
+   before waiting for other midpoints or departure dates. Already published matches
+   survive a later date's failure or cancellation. If the regular list is empty or
+   has no usable prices, search without a comparison ceiling and
    label this explicitly. Zero/missing/nonfinite fares are unavailable, never free.
 
 Airport IANA time zones are used to compare actual instants, including midnight,
@@ -127,7 +131,7 @@ The integration targets the camelCase API documented on 2026-10-28 (upstream `go
 - `src/components/SegmentDetails.tsx`, `LayoverDetails.tsx`: continuous itinerary timeline.
 - `src/components/FareDetails.tsx`, `CarrierLinks.tsx`, `SearchMetadata.tsx`: optional provider details.
 - `src/components/SelfTransferResults.tsx`: independent ticket cards and live midpoint status list.
-- `src/lib/self-transfer.ts`: bounded two-phase search, fare pruning and range-minimum joins.
+- `src/lib/self-transfer.ts`: bounded progressive search, fare pruning and range-minimum joins.
 - `src/lib/routes.ts`, `flight-time.ts`: graph candidates, distances and airport-local datetime conversion.
 - `src/self-transfer.css`: responsive sidebar and result columns.
 - `scripts/prepare-routes.mjs`: repeatable offline dataset preparation.
@@ -140,3 +144,7 @@ price pruning and the maximum-fare ceiling, range-minimum joins against a brute-
 reference, nonstop short legs in both orientations, timezone/DST/date-line behavior,
 multiday windows, empty baselines, endpoint filters, partial failures, cancellation,
 concurrency, and deterministic dataset regeneration.
+
+Streaming regression tests deliberately hold one midpoint or departure date pending
+to verify that matching results are emitted before it resolves, that a later cheaper
+midpoint is still searched, and that failures/cancellation preserve earlier matches.

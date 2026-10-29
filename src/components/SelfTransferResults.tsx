@@ -4,10 +4,10 @@ import { FlightCard } from './FlightCard';
 
 const labels: Record<MidpointStatus, string> = {
   queued: 'Not started',
-  pricing: 'Pricing long leg',
-  ready: 'Long leg priced',
-  searching: 'Matching transfers',
-  results: 'With results',
+  pricing: 'Pricing',
+  ready: 'Ready',
+  searching: 'Searching',
+  results: 'Found',
   empty: 'No results',
   pruned: 'Skipped by price',
   error: 'Search failed',
@@ -33,12 +33,10 @@ export function MidpointSidebar({
         {progress
           ? `${finished} of ${progress.midpoints.length} finished`
           : loading
-            ? 'Waiting for regular results…'
+            ? 'Waiting…'
             : 'No midpoint search'}
       </p>
-      {progress && !progress.midpoints.length && (
-        <p className="muted">No midpoints match this route and its connection filters.</p>
-      )}
+      {progress && !progress.midpoints.length && <p className="muted">No matching midpoints.</p>}
       <ul>
         {progress?.midpoints.map((hub) => (
           <li key={hub.code} data-status={hub.status}>
@@ -48,14 +46,19 @@ export function MidpointSidebar({
             </div>
             <p>{hub.airport.city || hub.airport.name}</p>
             {hub.cheapestLong !== undefined && (
-              <small>Long leg from {formatPrice(hub.cheapestLong, 'USD')}</small>
+              <small>Long leg {formatPrice(hub.cheapestLong, 'USD')}</small>
             )}
             {hub.resultCount > 0 && (
               <small>
                 {hub.resultCount} {hub.resultCount === 1 ? 'option' : 'options'}
               </small>
             )}
-            {hub.message && <small>{hub.message}</small>}
+            {hub.status === 'error' && hub.message && (
+              <details className="midpoint-error">
+                <summary>Error details</summary>
+                <small>{hub.message}</small>
+              </details>
+            )}
           </li>
         ))}
       </ul>
@@ -76,16 +79,16 @@ export function SelfTransferResults({
 }) {
   const errors = progress?.midpoints.filter((h) => h.status === 'error').length ?? 0;
   const phase = !progress
-    ? 'Regular results appear first. Midpoint searches follow automatically.'
-    : progress.phase === 'pricing'
-      ? 'Pricing the long legs…'
-      : progress.phase === 'joining'
-        ? 'Matching flights, cheapest midpoint first…'
-        : progress.phase === 'cancelled'
-          ? 'Search cancelled. Completed results are retained.'
-          : errors
-            ? `Search finished with ${errors} failed ${errors === 1 ? 'midpoint' : 'midpoints'}. Results are partial.`
-            : 'Search complete';
+    ? loading
+      ? 'Waiting…'
+      : 'Ready'
+    : progress.phase === 'cancelled'
+      ? 'Cancelled'
+      : progress.phase !== 'complete'
+        ? 'Searching…'
+        : errors
+          ? `Partial · ${errors} failed`
+          : 'Complete';
   return (
     <section className="results-section transfer-results" aria-label="Self-transfer results">
       <div className="results-heading">
@@ -93,13 +96,9 @@ export function SelfTransferResults({
         <span className="column-tag">Separate tickets</span>
       </div>
       <p className="result-count" role="status">
-        {progress?.results.length ?? 0} options ·{' '}
-        {error ? 'Search unavailable' : loading || progress ? phase : 'Awaiting search'}
+        {progress?.results.length ?? 0} options · {error ? 'Unavailable' : phase}
       </p>
-      <p className="transfer-advice">
-        Allow time to collect bags, clear immigration, and check in again. Each ticket has its own
-        baggage rules; a missed connection may require a new ticket.
-      </p>
+      <p className="transfer-advice">Missed connections aren’t protected.</p>
       {error && (
         <p className="transfer-error" role="alert">
           {error}
@@ -107,29 +106,15 @@ export function SelfTransferResults({
       )}
       {progress?.ceilingPrice !== null && progress?.ceilingPrice !== undefined && (
         <p className="muted">
-          Combined fares up to {formatPrice(progress.ceilingPrice, currency)} · Lowest regular fare{' '}
-          {formatPrice(progress.baselinePrice!, currency)}
+          Regular fare ceiling: <strong>{formatPrice(progress.ceilingPrice, currency)}</strong>
         </p>
       )}
       {progress && progress.baselinePrice === null && (
-        <p className="muted">
-          No priced regular flights to compare. No regular fare ceiling is available.
-        </p>
-      )}
-      {!!progress?.skippedFlights && (
-        <p className="muted">
-          {progress.skippedFlights} flight records omitted: missing fares, mismatched airports,
-          connections on the short leg, or missing/ambiguous local times.
-        </p>
+        <p className="muted">No regular fare to compare.</p>
       )}
       {!error && progress?.phase === 'complete' && !progress.results.length && (
         <div className="empty-state">
           <h3>No matching self-transfers</h3>
-          <p>
-            {errors
-              ? 'Some midpoints could not be searched. Try again or adjust the route.'
-              : 'Try a wider transfer window, another date, or different airports.'}
-          </p>
         </div>
       )}
       <div className="transfer-list">
@@ -150,8 +135,8 @@ export function SelfTransferResults({
                     {result.price < progress.baselinePrice
                       ? `Save ${formatPrice(progress.baselinePrice - result.price, currency)}`
                       : result.price === progress.baselinePrice
-                        ? 'Matches lowest regular fare'
-                        : `${formatPrice(result.price - progress.baselinePrice, currency)} above lowest regular fare`}
+                        ? 'Same as regular'
+                        : `${formatPrice(result.price - progress.baselinePrice, currency)} above regular`}
                   </span>
                 )}
               </div>

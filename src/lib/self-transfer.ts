@@ -222,6 +222,26 @@ export async function searchSelfTransfers({
   function check() {
     signal.throwIfAborted();
   }
+  // Pricing and matching share a three-request pool. Short-leg requests get the
+  // next available slot so a slow/unpriced midpoint cannot hold back results.
+  let activeQueries = 0;
+  const permits: (() => void)[] = [];
+  async function runQuery(next: SearchRequest, shortLeg: boolean) {
+    if (activeQueries < 3) activeQueries++;
+    else
+      await new Promise<void>((resolve) => {
+        if (shortLeg) permits.unshift(resolve);
+        else permits.push(resolve);
+      });
+    try {
+      check();
+      return await query(next, signal);
+    } finally {
+      const nextPermit = permits.shift();
+      if (nextPermit) nextPermit();
+      else activeQueries--;
+    }
+  }
   const cache = new Map<string, Promise<SearchResponse>>();
   async function fetchLeg(hub: MidpointProgress, leg: 1 | 2, date: string) {
     check();
@@ -251,7 +271,7 @@ export async function searchSelfTransfers({
     const key = JSON.stringify(next);
     let pending = cache.get(key);
     if (!pending) {
-      pending = query(next, signal);
+      pending = runQuery(next, nonstop);
       cache.set(key, pending);
     }
     const data = await pending;
@@ -261,106 +281,114 @@ export async function searchSelfTransfers({
     return normalized.flights;
   }
   const long = new Map<string, TimedFlight[]>();
+  const seenResults = new Set<string>();
+  const waiting = new Set<() => void>();
+  function wake() {
+    for (const resolve of waiting) resolve();
+    waiting.clear();
+  }
+  function publish(hub: MidpointProgress, leg1: TimedFlight[], leg2: TimedFlight[]) {
+    check();
+    for (const result of joinFlights(leg1, leg2, options, hub.code)) {
+      if (result.price > ceiling || seenResults.has(result.id)) continue;
+      state.results.push(result);
+      seenResults.add(result.id);
+      hub.resultCount++;
+      best = Math.min(best, result.price);
+    }
+    state.results.sort(
+      (a, b) =>
+        a.price - b.price || a.durationMinutes - b.durationMinutes || a.id.localeCompare(b.id),
+    );
+    emit();
+  }
   emit();
   let cursor = 0;
-  // Bound provider load. Each worker makes at most one request at a time.
+  let pricingWorkers = Math.min(3, hubs.length);
   async function worker() {
-    while (cursor < state.midpoints.length) {
-      check();
-      const hub = state.midpoints[cursor++];
-      hub.status = 'pricing';
-      emit();
-      try {
-        const flights = await fetchLeg(hub, hub.longLeg, original.date);
-        if (hub.longLeg === 2) flights.push(...(await fetchLeg(hub, 2, addDays(original.date, 1))));
-        long.set(hub.code, flights);
-        hub.cheapestLong = flights.length
-          ? Math.min(...flights.map((f) => f.flight.price))
-          : undefined;
-        hub.status = flights.length ? 'ready' : 'empty';
-        if (!flights.length) hub.message = 'No usable long-leg flights.';
-      } catch (error) {
+    try {
+      while (cursor < state.midpoints.length) {
         check();
-        hub.status = 'error';
-        hub.message = error instanceof Error ? error.message : 'Midpoint search failed.';
-      }
-      emit();
-    }
-  }
-  try {
-    // Settle workers before leaving, including on cancellation.
-    const workers = await Promise.allSettled(
-      Array.from({ length: Math.min(3, hubs.length) }, worker),
-    );
-    check();
-    const failed = workers.find((result) => result.status === 'rejected');
-    if (failed?.status === 'rejected') throw failed.reason;
-    state.phase = 'joining';
-    emit();
-    const ready = state.midpoints
-      .filter((h) => h.status === 'ready')
-      .sort((a, b) => a.cheapestLong! - b.cheapestLong! || a.code.localeCompare(b.code));
-    for (let index = 0; index < ready.length; index++) {
-      check();
-      const hub = ready[index];
-      if (hub.cheapestLong! >= best) {
-        for (const remaining of ready.slice(index)) {
-          remaining.status = 'pruned';
-          remaining.message = 'Long leg alone cannot beat the best fare found.';
+        const hub = state.midpoints[cursor++];
+        hub.status = 'pricing';
+        emit();
+        try {
+          const flights = await fetchLeg(hub, hub.longLeg, original.date);
+          if (hub.longLeg === 2)
+            flights.push(...(await fetchLeg(hub, 2, addDays(original.date, 1))));
+          long.set(hub.code, flights);
+          hub.cheapestLong = flights.length
+            ? Math.min(...flights.map((f) => f.flight.price))
+            : undefined;
+          hub.status = flights.length ? 'ready' : 'empty';
+          if (!flights.length) hub.message = 'No usable long-leg flights.';
+        } catch (error) {
+          check();
+          hub.status = 'error';
+          hub.message = error instanceof Error ? error.message : 'Midpoint search failed.';
         }
         emit();
-        break;
+        wake();
       }
+    } finally {
+      pricingWorkers--;
+      wake();
+    }
+  }
+  async function matchReady() {
+    while (true) {
+      check();
+      // Cheapest among currently priced hubs. Unpriced hubs are never pruned:
+      // their prices may still beat best when they arrive.
+      const hub = state.midpoints
+        .filter((h) => h.status === 'ready')
+        .sort((a, b) => a.cheapestLong! - b.cheapestLong! || a.code.localeCompare(b.code))[0];
+      if (!hub) {
+        if (!pricingWorkers) return;
+        await new Promise<void>((resolve) => waiting.add(resolve));
+        continue;
+      }
+      if (hub.cheapestLong! >= best) {
+        hub.status = 'pruned';
+        hub.message = 'Long leg alone cannot beat the best fare found.';
+        emit();
+        continue;
+      }
+      state.phase = 'joining';
       hub.status = 'searching';
       emit();
       try {
-        let leg1: TimedFlight[], leg2: TimedFlight[];
         if (hub.longLeg === 2) {
-          leg2 = long.get(hub.code)!;
+          const leg2 = long.get(hub.code)!;
           const after =
             Math.min(...leg2.map((f) => f.departure)) - options.maxBufferMinutes * 60_000;
           const before =
             Math.max(...leg2.map((f) => f.departure)) - options.minBufferMinutes * 60_000;
-          leg1 = (await fetchLeg(hub, 1, original.date)).filter(
+          const leg1 = (await fetchLeg(hub, 1, original.date)).filter(
             (f) => f.arrival >= after && f.arrival <= before,
           );
+          publish(hub, leg1, leg2);
         } else {
-          leg1 = long.get(hub.code)!;
+          const leg1 = long.get(hub.code)!;
           const after = Math.min(...leg1.map((f) => f.arrival)) + options.minBufferMinutes * 60_000;
           const before =
             Math.max(...leg1.map((f) => f.arrival)) + options.maxBufferMinutes * 60_000;
-          leg2 = [];
           const lastDate = localDateAt(before, hub.airport.timezone);
           for (
             let day = localDateAt(after, hub.airport.timezone);
             day <= lastDate;
             day = addDays(day, 1)
           ) {
-            leg2.push(
-              ...(await fetchLeg(hub, 2, day)).filter(
-                (f) => f.departure >= after && f.departure <= before,
-              ),
+            const leg2 = (await fetchLeg(hub, 2, day)).filter(
+              (f) => f.departure >= after && f.departure <= before,
             );
+            // Publish each day's matches before requesting the next day. Keep
+            // them even if a later day fails or the user cancels the search.
+            publish(hub, leg1, leg2);
           }
         }
-        const results = joinFlights(leg1, leg2, options, hub.code).filter(
-          (r) => r.price <= ceiling,
-        );
-        const seen = new Set(state.results.map((r) => r.id));
-        for (const result of results) {
-          if (!seen.has(result.id)) {
-            state.results.push(result);
-            seen.add(result.id);
-          }
-          best = Math.min(best, result.price);
-        }
-        state.results.sort(
-          (a, b) =>
-            a.price - b.price || a.durationMinutes - b.durationMinutes || a.id.localeCompare(b.id),
-        );
-        hub.resultCount = results.length;
-        hub.status = results.length ? 'results' : 'empty';
-        if (!results.length)
+        hub.status = hub.resultCount ? 'results' : 'empty';
+        if (!hub.resultCount)
           hub.message = 'No matching transfers within the time window and regular fare ceiling.';
       } catch (error) {
         check();
@@ -369,16 +397,19 @@ export async function searchSelfTransfers({
       }
       emit();
     }
+  }
+  signal.addEventListener('abort', wake, { once: true });
+  try {
+    const tasks = Array.from({ length: pricingWorkers }, worker);
+    tasks.push(matchReady());
+    const settled = await Promise.allSettled(tasks);
+    check();
+    const failed = settled.find((result) => result.status === 'rejected');
+    if (failed?.status === 'rejected') throw failed.reason;
     state.phase = 'complete';
     emit();
     return snapshot();
-  } catch (error) {
-    if (signal.aborted) {
-      state.phase = 'cancelled';
-      for (const hub of state.midpoints)
-        if (['queued', 'pricing', 'ready', 'searching'].includes(hub.status))
-          hub.status = 'cancelled';
-    }
-    throw error;
+  } finally {
+    signal.removeEventListener('abort', wake);
   }
 }
