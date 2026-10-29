@@ -532,7 +532,7 @@ summary::-webkit-details-marker {
 .itinerary-timeline > li::before {
   content: '';
   position: absolute;
-  left: 6px;
+  left: 8px;
   top: 0;
   bottom: 0;
   width: 2px;
