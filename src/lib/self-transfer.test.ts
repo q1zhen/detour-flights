@@ -573,3 +573,51 @@ it('stops emitting after cancellation while retaining already published results'
     await stopped;
   }
 });
+
+it('uses all three submitted midpoint filters without sending them to the flight API', async () => {
+  const g = graph([['HAA', -2]]);
+  const query = vi.fn(async (next: SearchRequest) => {
+    expect(next).not.toHaveProperty('candidateFilters');
+    expect(next.flights[0]).not.toHaveProperty('ratio');
+    return response([]);
+  });
+  const selected = async (ratio: number, slackKm: number, minDegree: number) =>
+    (
+      await run(query, {
+        graph: g,
+        options: { ...DEFAULT_TRANSFER_OPTIONS, candidateFilters: { ratio, slackKm, minDegree } },
+      })
+    ).midpoints.map((h) => h.code);
+  expect(await selected(1, 0, 10)).toEqual([]);
+  expect(query).not.toHaveBeenCalled();
+  expect(await selected(1.25, 0, 10)).toEqual(['HAA']);
+  expect(await selected(1, 500, 10)).toEqual(['HAA']);
+  expect(await selected(1.25, 300, 11)).toEqual([]);
+  expect(await selected(1.25, 300, 10)).toEqual(['HAA']);
+});
+it('validates candidate filter bounds while retaining default options for existing searches', () => {
+  expect(validateTransferOptions(DEFAULT_TRANSFER_OPTIONS)).toBe(true);
+  const defaults = { ratio: 1.25, slackKm: 300, minDegree: 10 };
+  for (const patch of [
+    { ratio: NaN },
+    { ratio: 0.9 },
+    { ratio: 3.1 },
+    { slackKm: -1 },
+    { slackKm: 3001 },
+    { minDegree: 0.5 },
+    { minDegree: 501 },
+  ]) {
+    expect(
+      validateTransferOptions({
+        ...DEFAULT_TRANSFER_OPTIONS,
+        candidateFilters: { ...defaults, ...patch },
+      }),
+    ).toBe(false);
+  }
+  expect(
+    validateTransferOptions({
+      ...DEFAULT_TRANSFER_OPTIONS,
+      candidateFilters: { ratio: 3, slackKm: 3000, minDegree: 500 },
+    }),
+  ).toBe(true);
+});

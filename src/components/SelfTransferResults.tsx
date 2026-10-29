@@ -1,16 +1,16 @@
 import type { TransferProgress, MidpointStatus } from '../lib/self-transfer';
-import { formatDuration, formatPrice } from '../lib/format';
-import { FlightCard } from './FlightCard';
+import { formatPrice } from '../lib/format';
+import { SelfTransferCard } from './SelfTransferCard';
 
 const labels: Record<MidpointStatus, string> = {
-  queued: 'Not started',
+  queued: 'Queued',
   pricing: 'Pricing',
   ready: 'Ready',
   searching: 'Searching',
   results: 'Found',
   empty: 'No results',
-  pruned: 'Skipped by price',
-  error: 'Search failed',
+  pruned: 'Price cutoff',
+  error: 'Failed',
   cancelled: 'Cancelled',
 };
 export function MidpointSidebar({
@@ -21,38 +21,51 @@ export function MidpointSidebar({
   loading: boolean;
 }) {
   const finished =
-    progress?.midpoints.filter((h) =>
-      ['results', 'empty', 'pruned', 'error', 'cancelled'].includes(h.status),
-    ).length ?? 0;
+    progress?.midpoints.filter((h) => ['results', 'empty', 'pruned', 'error'].includes(h.status))
+      .length ?? 0;
+  const total = progress?.midpoints.length ?? 0;
+  const cancelled = progress?.phase === 'cancelled';
+  const progressValue = progress
+    ? total
+      ? finished
+      : progress.phase === 'complete'
+        ? 1
+        : 0
+    : loading
+      ? undefined
+      : 0;
   return (
     <aside className="midpoint-sidebar" aria-label="Midpoint search progress">
       <h2>
         Midpoints <span>{progress?.midpoints.length ?? '—'}</span>
       </h2>
-      <p className="muted" role="status">
-        {progress
-          ? `${finished} of ${progress.midpoints.length} finished`
-          : loading
-            ? 'Waiting…'
-            : 'No midpoint search'}
-      </p>
-      {progress && !progress.midpoints.length && <p className="muted">No matching midpoints.</p>}
+      <div className="midpoint-progress-label" role="status">
+        <span>{progress ? `${finished}/${total}` : loading ? 'Waiting…' : 'Ready'}</span>
+        {cancelled && <span>Cancelled</span>}
+      </div>
+      <progress
+        className="midpoint-progress"
+        max={total || 1}
+        value={progressValue}
+        aria-label="Midpoint search progress"
+        aria-valuetext={
+          progress
+            ? `${finished} of ${total} finished${cancelled ? ', cancelled' : ''}`
+            : 'Waiting for midpoints'
+        }
+      />
+      {progress && !total && <p className="muted">No matching midpoints.</p>}
       <ul>
         {progress?.midpoints.map((hub) => (
           <li key={hub.code} data-status={hub.status}>
             <div>
-              <strong>{hub.code}</strong>
-              <span>{labels[hub.status]}</span>
+              <strong title={`${hub.airport.city} · ${hub.airport.name}`}>{hub.code}</strong>
+              <span>
+                {hub.status === 'results'
+                  ? `${hub.resultCount} found`
+                  : `${labels[hub.status]}${hub.resultCount ? ` · ${hub.resultCount} found` : ''}`}
+              </span>
             </div>
-            <p>{hub.airport.city || hub.airport.name}</p>
-            {hub.cheapestLong !== undefined && (
-              <small>Long leg {formatPrice(hub.cheapestLong, 'USD')}</small>
-            )}
-            {hub.resultCount > 0 && (
-              <small>
-                {hub.resultCount} {hub.resultCount === 1 ? 'option' : 'options'}
-              </small>
-            )}
             {hub.status === 'error' && hub.message && (
               <details className="midpoint-error">
                 <summary>Error details</summary>
@@ -119,45 +132,12 @@ export function SelfTransferResults({
       )}
       <div className="transfer-list">
         {progress?.results.map((result) => (
-          <article className="transfer-card" key={result.id}>
-            <header>
-              <div>
-                <h3>Via {result.midpoint}</h3>
-                <p>
-                  {formatDuration(result.transferMinutes)} transfer ·{' '}
-                  {formatDuration(result.durationMinutes)} total
-                </p>
-              </div>
-              <div className="transfer-price">
-                <strong>{formatPrice(result.price, currency)}</strong>
-                {progress.baselinePrice !== null && (
-                  <span>
-                    {result.price < progress.baselinePrice
-                      ? `Save ${formatPrice(progress.baselinePrice - result.price, currency)}`
-                      : result.price === progress.baselinePrice
-                        ? 'Same as regular'
-                        : `${formatPrice(result.price - progress.baselinePrice, currency)} above regular`}
-                  </span>
-                )}
-              </div>
-            </header>
-            <details className="transfer-tickets">
-              <summary>
-                View both tickets{' '}
-                <span>
-                  {formatPrice(result.leg1.price, currency)} +{' '}
-                  {formatPrice(result.leg2.price, currency)}
-                </span>
-              </summary>
-              <h4>Ticket 1 · To {result.midpoint}</h4>
-              <FlightCard flight={result.leg1} currency={currency} cheapest={false} />
-              <p className="transfer-divider">
-                Self-transfer at {result.midpoint} · {formatDuration(result.transferMinutes)}
-              </p>
-              <h4>Ticket 2 · From {result.midpoint}</h4>
-              <FlightCard flight={result.leg2} currency={currency} cheapest={false} />
-            </details>
-          </article>
+          <SelfTransferCard
+            key={result.id}
+            result={result}
+            currency={currency}
+            baselinePrice={progress.baselinePrice}
+          />
         ))}
       </div>
     </section>

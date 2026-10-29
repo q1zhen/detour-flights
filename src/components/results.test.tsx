@@ -139,12 +139,12 @@ it('renders accessible two-handle time bars and disables them during searches', 
   const html = renderToStaticMarkup(
     <SearchForm onSearch={() => {}} loading={true} onCancel={() => {}} />,
   );
-  expect(html.match(/role="slider"/g)).toHaveLength(4);
+  expect(html.match(/role="slider"/g)).toHaveLength(7);
   expect(html).toContain('aria-label="Departure time earliest"');
   expect(html).toContain('aria-label="Arrival time latest"');
   expect(html).toContain('aria-valuetext="00:00"');
   expect(html).toContain('aria-valuetext="23:59"');
-  expect(html.match(/aria-disabled="true"/g)).toHaveLength(2);
+  expect(html.match(/aria-disabled="true"/g)).toHaveLength(5);
 });
 
 import { MidpointSidebar, SelfTransferResults } from './SelfTransferResults';
@@ -193,7 +193,7 @@ it('renders live midpoint statuses and independently bookable self-transfer tick
       <SelfTransferResults progress={transferProgress} loading error={null} currency="USD" />
     </>,
   );
-  expect(html).toContain('Found');
+  expect(html).toContain('1 found');
   expect(html).toContain('Via ORD');
   expect(html).toContain('Save $333');
   expect(html).toContain('2h 0m');
@@ -234,4 +234,80 @@ it('distinguishes partial failures, cancellation and unavailable baseline prices
   );
   expect(cancelled).toContain('Cancelled');
   expect(cancelled).not.toContain('No matching self-transfers');
+});
+
+import { SelfTransferCard } from './SelfTransferCard';
+it('shows the three candidate sliders with the pseudocode defaults and units', () => {
+  const html = renderToStaticMarkup(
+    <SearchForm onSearch={() => {}} loading={false} onCancel={() => {}} />,
+  );
+  expect(html).toContain('aria-label="Distance multiplier"');
+  expect(html).toContain('aria-valuetext="1.25×"');
+  expect(html).toContain('aria-label="Extra distance"');
+  expect(html).toContain('aria-valuetext="300 km"');
+  expect(html).toContain('aria-label="Min outbound routes"');
+  expect(html).toContain('aria-valuetext="10"');
+  expect(html).toContain('Reset midpoint filters');
+});
+it('shows a combined timeline and marks only the self-transfer boundary among multiple stops', () => {
+  const finalSegment = {
+    ...oneWayFlight.segments[1],
+    fromAirport: { code: 'LAX', name: 'Los Angeles' },
+    toAirport: { code: 'SFO', name: 'San Francisco' },
+    departure: { date: { year: 2026, month: 11, day: 21 }, time: { hour: 10, minute: 0 } },
+    arrival: { date: { year: 2026, month: 11, day: 21 }, time: { hour: 12, minute: 0 } },
+  };
+  const html = renderToStaticMarkup(
+    <SelfTransferCard
+      currency="USD"
+      baselinePrice={600}
+      result={{
+        ...transferProgress.results[0],
+        midpoint: 'LAX',
+        leg1: oneWayFlight,
+        leg2: { ...oneWayFlight, segments: [finalSegment] },
+        durationMinutes: 1740,
+      }}
+    />,
+  );
+  const summary = html.slice(0, html.indexOf('</summary>'));
+  expect(summary).toContain('07:00');
+  expect(summary).toContain('12:00');
+  expect(summary).toContain('Arrival date offset +1d');
+  expect(summary).toContain('2 stops');
+  expect(summary).toContain('ORD');
+  expect(summary).toContain('LAX<em>Self-transfer</em>');
+  expect(summary.match(/self-transfer-marker/g)).toHaveLength(1);
+  expect(summary).toContain('29h 0m');
+  expect(html).toContain('Ticket 1 · To LAX');
+  expect(html).toContain('Ticket 2 · From LAX');
+  expect(html.match(/>Google Flights/g)).toHaveLength(2);
+});
+it('reports completed midpoint progress and does not count cancelled work as complete', () => {
+  const second = {
+    ...transferProgress.midpoints[0],
+    code: 'BOS',
+    status: 'searching' as const,
+    resultCount: 0,
+  };
+  const active = { ...transferProgress, midpoints: [...transferProgress.midpoints, second] };
+  const html = renderToStaticMarkup(<MidpointSidebar progress={active} loading />);
+  expect(html).toContain('<progress');
+  expect(html).toContain('max="2" value="1"');
+  expect(html).toContain('aria-valuetext="1 of 2 finished"');
+  const cancelled = renderToStaticMarkup(
+    <MidpointSidebar
+      loading={false}
+      progress={{
+        ...active,
+        phase: 'cancelled',
+        midpoints: [active.midpoints[0], { ...second, status: 'cancelled' }],
+      }}
+    />,
+  );
+  expect(cancelled).toContain('max="2" value="1"');
+  expect(cancelled).toContain('1 of 2 finished, cancelled');
+  const pending = renderToStaticMarkup(<MidpointSidebar progress={null} loading />);
+  expect(pending).toContain('<progress');
+  expect(pending).not.toContain('value=');
 });

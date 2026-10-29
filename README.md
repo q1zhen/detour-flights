@@ -46,7 +46,8 @@ Round trips remain disabled and multi-city is unsupported. No booking occurs in 
 Regular results appear first. A separate column then fills with two-ticket options,
 ranked by combined price and then elapsed journey duration. A midpoint sidebar
 shows queued, long-leg pricing, priced, matching, with-results, no-results,
-price-pruned, failed, and cancelled states. Cancel keeps completed results and
+price-pruned, failed, and cancelled states in compact rows, with a completed-midpoint
+progress bar. Cancelled work does not count toward completion. Cancel keeps completed results and
 aborts pending work; starting another search clears the previous run.
 
 The form adds a separate self-transfer window (default 2–24 hours; configurable
@@ -59,12 +60,25 @@ only the original departure/final arrival. Connection allow/block filters includ
 the midpoint as well as within-ticket connections. The self-transfer buffer is
 independent of within-ticket layover limits.
 
+Midpoint-filter sliders tune the actual candidate selection: distance multiplier
+`ratio` (1–3, step 0.05; default 1.25), extra distance `slack_km` (0–3,000 km,
+step 50; default 300), and minimum outbound routes `min_deg` (0–500, step 1;
+default 10). A compact formula shows the combined distance allowance. Reset
+restores all three defaults. Values are captured on submission and validated
+before use; these client-side settings are never sent to the flight API.
+
+Self-transfer cards use the same route timeline, local endpoint times, stop
+markers, total duration and price layout as regular flights. The ticket boundary
+has a distinct **Self-transfer** marker; ordinary connections retain their usual
+markers. Expanding the combined row reveals the two independently expandable
+tickets and their booking links.
+
 Each midpoint keeps the long-leg-first search, with pricing and matching overlapped:
 
 1. Use the union of outgoing neighbors of the origin and incoming neighbors of the
-   destination, excluding both endpoints. Keep hubs with at least 10 outgoing
-   destinations and total great-circle distance no greater than `1.25 × direct +
-300 km`. Use airport codes found in the graph; city codes remain supported for
+   destination, excluding both endpoints. Keep hubs meeting the selected minimum outgoing
+   degree and total great-circle distance no greater than `ratio × direct + slack_km`
+   (defaults: 10 routes, 1.25× and 300 km). Use airport codes found in the graph; city codes remain supported for
    regular searches but cannot be used to place a self-transfer geographically.
 2. Price each hub's longer leg, with no transfer-time restriction. If that is leg
    2, query the requested date and following date; otherwise query leg 1 on the
@@ -130,7 +144,8 @@ The integration targets the camelCase API documented on 2026-10-28 (upstream `go
 - `src/components/FlightResults.tsx`, `FlightCard.tsx`, `FlightDirection.tsx`: result states, sorting, and compact rows.
 - `src/components/SegmentDetails.tsx`, `LayoverDetails.tsx`: continuous itinerary timeline.
 - `src/components/FareDetails.tsx`, `CarrierLinks.tsx`, `SearchMetadata.tsx`: optional provider details.
-- `src/components/SelfTransferResults.tsx`: independent ticket cards and live midpoint status list.
+- `src/components/SelfTransferResults.tsx`, `SelfTransferCard.tsx`: combined route summaries, separate tickets, compact midpoint status list and progress.
+- `src/components/CandidateFilterSliders.tsx`: candidate distance/degree sliders and reset.
 - `src/lib/self-transfer.ts`: bounded progressive search, fare pruning and range-minimum joins.
 - `src/lib/routes.ts`, `flight-time.ts`: graph candidates, distances and airport-local datetime conversion.
 - `src/self-transfer.css`: responsive sidebar and result columns.

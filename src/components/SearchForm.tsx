@@ -6,6 +6,8 @@ import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
 import { TravelerPicker } from './TravelerPicker';
 import { SearchOptions } from './SearchOptions';
 import { SelectField } from './SelectField';
+import { CandidateFilterSliders } from './CandidateFilterSliders';
+import { DEFAULT_CANDIDATE_FILTERS } from '../lib/routes';
 import { validateTransferOptions } from '../lib/self-transfer';
 import type { TransferOptions } from '../lib/self-transfer';
 
@@ -28,6 +30,9 @@ export function SearchForm({
   const [errors, setErrors] = useState<string[]>([]);
   const [minTransfer, setMinTransfer] = useState('2');
   const [maxTransfer, setMaxTransfer] = useState('24');
+  const [candidateFilters, setCandidateFilters] = useState(() => ({
+    ...DEFAULT_CANDIDATE_FILTERS,
+  }));
   function update<K extends keyof SearchValues>(key: K, value: SearchValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }));
   }
@@ -41,6 +46,7 @@ export function SearchForm({
         const options = {
           minBufferMinutes: Number(minTransfer) * 60,
           maxBufferMinutes: Number(maxTransfer) * 60,
+          candidateFilters: { ...candidateFilters },
         };
         if (!minTransfer.trim() || !maxTransfer.trim() || !validateTransferOptions(options))
           nextErrors.push(
@@ -151,6 +157,11 @@ export function SearchForm({
             />
           </label>
         </div>
+        <CandidateFilterSliders
+          value={candidateFilters}
+          onChange={setCandidateFilters}
+          disabled={loading}
+        />
       </fieldset>
       {errors.length > 0 && (
         <Callout.Root color="red" role="alert" mt="3">

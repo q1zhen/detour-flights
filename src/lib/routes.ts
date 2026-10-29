@@ -1,3 +1,31 @@
+export interface CandidateFilters {
+  ratio: number;
+  slackKm: number;
+  minDegree: number;
+}
+export const DEFAULT_CANDIDATE_FILTERS: CandidateFilters = {
+  ratio: 1.25,
+  slackKm: 300,
+  minDegree: 10,
+};
+export const CANDIDATE_FILTER_LIMITS = {
+  ratio: { min: 1, max: 3, step: 0.05 },
+  slackKm: { min: 0, max: 3000, step: 50 },
+  minDegree: { min: 0, max: 500, step: 1 },
+};
+export function validCandidateFilters(filters: CandidateFilters) {
+  return (Object.keys(CANDIDATE_FILTER_LIMITS) as (keyof CandidateFilters)[]).every((key) => {
+    const value = filters[key];
+    const { min, max } = CANDIDATE_FILTER_LIMITS[key];
+    return (
+      Number.isFinite(value) &&
+      value >= min &&
+      value <= max &&
+      (key === 'ratio' || Number.isInteger(value))
+    );
+  });
+}
+
 export interface RouteAirport {
   name: string;
   city: string;
@@ -40,9 +68,9 @@ export function candidates(
   graph: RouteGraph,
   from: string,
   to: string,
-  ratio = 1.25,
-  slackKm = 300,
-  minDegree = 10,
+  ratio = DEFAULT_CANDIDATE_FILTERS.ratio,
+  slackKm = DEFAULT_CANDIDATE_FILTERS.slackKm,
+  minDegree = DEFAULT_CANDIDATE_FILTERS.minDegree,
 ): MidpointCandidate[] {
   const a = graph.airports[from];
   const b = graph.airports[to];

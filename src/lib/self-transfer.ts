@@ -1,12 +1,13 @@
 import { searchFlights } from './api';
 import { addDays, localDateAt, localToEpoch } from './flight-time';
-import { candidates } from './routes';
-import type { MidpointCandidate, RouteGraph } from './routes';
+import { candidates, DEFAULT_CANDIDATE_FILTERS, validCandidateFilters } from './routes';
+import type { CandidateFilters, MidpointCandidate, RouteGraph } from './routes';
 import type { Flight, FlightTime, SearchRequest, SearchResponse } from './types';
 
 export interface TransferOptions {
   minBufferMinutes: number;
   maxBufferMinutes: number;
+  candidateFilters?: CandidateFilters;
 }
 export const DEFAULT_TRANSFER_OPTIONS: TransferOptions = {
   minBufferMinutes: 120,
@@ -14,7 +15,13 @@ export const DEFAULT_TRANSFER_OPTIONS: TransferOptions = {
 };
 export function validateTransferOptions(options: TransferOptions) {
   const { minBufferMinutes: min, maxBufferMinutes: max } = options;
-  return [min, max].every(Number.isInteger) && min >= 0 && max >= min && max <= 10080;
+  return (
+    [min, max].every(Number.isInteger) &&
+    min >= 0 &&
+    max >= min &&
+    max <= 10080 &&
+    validCandidateFilters(options.candidateFilters ?? DEFAULT_CANDIDATE_FILTERS)
+  );
 }
 export type MidpointStatus =
   | 'queued'
@@ -190,13 +197,21 @@ export async function searchSelfTransfers({
   query?: FlightQuery;
 }): Promise<TransferProgress> {
   if (!validateTransferOptions(options))
-    throw new Error('Choose an ordered transfer window between 0 and 168 hours.');
+    throw new Error('Choose valid transfer limits and midpoint filters.');
   const original = request.flights[0];
   const prices = baseline.map((f) => f.price).filter(validPrice);
   let best = prices.length ? Math.min(...prices) : Infinity;
   const ceiling = prices.length ? Math.max(...prices) : Infinity;
   const connections = request.filters?.connectionAirports;
-  const hubs = candidates(graph, original.fromAirport, original.toAirport).filter(
+  const filters = options.candidateFilters ?? DEFAULT_CANDIDATE_FILTERS;
+  const hubs = candidates(
+    graph,
+    original.fromAirport,
+    original.toAirport,
+    filters.ratio,
+    filters.slackKm,
+    filters.minDegree,
+  ).filter(
     (h) =>
       !connections?.block?.includes(h.code) &&
       (!connections?.allow?.length || connections.allow.includes(h.code)),

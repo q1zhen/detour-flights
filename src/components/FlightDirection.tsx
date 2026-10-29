@@ -1,13 +1,21 @@
 import type { Segment } from '../lib/types';
 import { arrivalDayOffset, formatTime } from '../lib/format';
 
-export function FlightDirection({ segments }: { segments: Segment[] }) {
+export function FlightDirection({
+  segments,
+  selfTransferIndex,
+}: {
+  segments: Segment[];
+  selfTransferIndex?: number;
+}) {
   const first = segments[0];
   const last = segments.at(-1);
   const offset = arrivalDayOffset(first?.departure, last?.arrival);
   const connections = segments.slice(0, -1);
   return (
-    <span className="flight-route">
+    <span
+      className={`flight-route${selfTransferIndex !== undefined ? ' self-transfer-route' : ''}`}
+    >
       <span className="route-endpoint">
         <strong>{formatTime(first?.departure)}</strong>
         <span>{first?.fromAirport?.code || '—'}</span>
@@ -23,9 +31,15 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
         <span className="route-path" aria-hidden="true">
           <i className="endpoint-dot" />
           {connections.map((segment, index) => (
-            <span className="connection-marker" key={index}>
+            <span
+              className={`connection-marker${index === selfTransferIndex ? ' self-transfer-marker' : ''}`}
+              key={index}
+            >
               <i />
-              <span>{segment.toAirport?.code || '—'}</span>
+              <span>
+                {segment.toAirport?.code || '—'}
+                {index === selfTransferIndex && <em>Self-transfer</em>}
+              </span>
             </span>
           ))}
           <i className="endpoint-dot" />
@@ -33,7 +47,12 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
         {connections.length > 0 && (
           <span className="sr-only">
             via{' '}
-            {connections.map((segment) => segment.toAirport?.code || 'unknown airport').join(', ')}
+            {connections
+              .map(
+                (segment, index) =>
+                  `${segment.toAirport?.code || 'unknown airport'}${index === selfTransferIndex ? ' (self-transfer)' : ''}`,
+              )
+              .join(', ')}
           </span>
         )}
       </span>
