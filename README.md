@@ -38,7 +38,7 @@ npm run format:check
 | Prices, airlines, and result identifiers | Flight cards and expandable details                                               |
 | Every flight segment                     | Airport codes/names, departure and arrival dates/times, flight duration, aircraft |
 | Carbon emissions                         | Kilograms of CO₂, typical route emissions, percentage comparison                  |
-| Google Flights links                     | One-way booking details or round-trip outbound selection; clear unavailable state |
+| Google Flights links                     | Booking details with the complete itinerary selected; clear unavailable state     |
 | Airline and alliance metadata            | Expandable metadata section, including when no flights are found                  |
 | API validation and service errors        | Readable errors with field paths; form values retained                            |
 | Health endpoint                          | Service status in the desktop header                                              |
@@ -48,8 +48,10 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 ## Provider limitations reflected in the UI
 
 - Multi-city and open-jaw trips are unsupported by the API and are not offered.
-- Round-trip results may include only outbound segments. Their Google Flights links continue to return-flight selection while preserving search parameters.
-- Prices are displayed as quoted by the provider, without assuming they are per-person or promising a final booking price.
+- Round-trip results include explicit outbound and return segments. Each card shows both directions separately, and its Google Flights link opens booking details with the exact complete itinerary selected.
+- The API expands the first 20 outbound options in provider order and returns every available return combination for those flights. There can be more than 20 results, but the search does not cover every possible outbound option. Failed return lookups fail the entire request; partial results are not shown.
+- Prices are the provider’s total itinerary fares for the exact flight combination, not two separately quoted one-way fares added together. Availability and final booking prices can change.
+- Round-trip emissions and typical-route emissions are already summed across both directions by the API. They are displayed once without double counting.
 - Times are airport-local, with no supplied UTC offsets. The app sums segment flight time and explicitly excludes layovers; it does not invent total journey or connection durations.
 - Missing values such as zero prices, zero durations, empty arrays, and unavailable links have explicit fallbacks.
 - Alliance metadata is displayed for reference; the API does not support alliance filtering.
@@ -63,12 +65,14 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 - `src/components/SearchOptions.tsx`: overall and per-leg search filters.
 - `src/components/SelectField.tsx`: reusable typed Radix selector.
 - `src/components/FlightResults.tsx`: result states, sorting, and metadata.
-- `src/components/FlightCard.tsx`: flight summary, segments, emissions, and booking link.
+- `src/components/FlightCard.tsx`: itinerary composition, total price, emissions, and booking link.
+- `src/components/FlightDirection.tsx`: direction summary with its own dates, stops, and flight time.
+- `src/components/SegmentDetails.tsx`: reusable individual segment details.
 - `src/components/AppHeader.tsx`: navigation and API health.
 - `src/lib/`: API types/client, request construction, validation, and formatting.
 
 ## Verification
 
-Automated tests cover request normalization, return-leg reversal, stop inheritance versus explicit null and zero, passenger constraints, airline validation, HTTP/network failures, cancellation, missing upstream data, metadata on empty searches, safe booking URLs, and escaped provider content.
+Automated tests cover request normalization, return-leg reversal, stop inheritance versus explicit null and zero, passenger constraints, airline validation, HTTP/network failures, cancellation, missing upstream data, metadata on empty searches, safe booking URLs, escaped provider content, complete round-trip pair preservation, per-direction stops and overnight offsets, combined flight duration, and more than 20 round-trip combinations.
 
 Browser checks exercised live one-way and round-trip searches, airline and stop filters, date edits, expandable details, and responsive layouts. No booking is performed by this app.
