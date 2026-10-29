@@ -147,6 +147,7 @@ describe('airport-local times', () => {
 describe('range-minimum transfer join', () => {
   const timed = (price: number, arrivalMinutes: number): TimedFlight => ({
     flight: flight('AAA', 'HAA', price),
+    cabin: 'economy',
     arrival: arrivalMinutes * 60_000,
     departure: (arrivalMinutes - 60) * 60_000,
   });
@@ -342,7 +343,11 @@ describe('progressive self-transfer search', () => {
             ],
       );
     };
-    const result = await run(query, { graph: graph([['HAA', 1]]), request: req });
+    const result = await run(query, {
+      graph: graph([['HAA', 1]]),
+      request: req,
+      options: { ...DEFAULT_TRANSFER_OPTIONS, preferenceScope: 'all-segments' },
+    });
     expect(result.results).toHaveLength(1);
     expect(result.results[0].price).toBe(100);
   });
@@ -620,4 +625,94 @@ it('validates candidate filter bounds while retaining default options for existi
       candidateFilters: { ratio: 3, slackKm: 3000, minDegree: 500 },
     }),
   ).toBe(true);
+});
+
+it.each([
+  [1, undefined],
+  [19, undefined],
+  [1, 'long-leg'],
+  [19, 'long-leg'],
+  [1, 'all-segments'],
+  [19, 'all-segments'],
+] as const)(
+  'applies airline and cabin scope %s / %s without changing the regular request',
+  async (lon, scope) => {
+    const req = request();
+    req.seat = 'business';
+    req.flights[0].airlines = ['AA', 'STAR_ALLIANCE'];
+    req.passengers.adults = 2;
+    const original = structuredClone(req);
+    const longLeg = lon === 1 ? 2 : 1;
+    const seen: SearchRequest[] = [];
+    const result = await run(
+      async (next) => {
+        seen.push(next);
+        const leg = next.flights[0];
+        const legNumber = leg.fromAirport === 'AAA' ? 1 : 2;
+        const selected = scope === 'all-segments' || legNumber === longLeg;
+        expect(next.seat).toBe(selected ? 'business' : 'economy');
+        if (selected) expect(leg.airlines).toEqual(['AA', 'STAR_ALLIANCE']);
+        else expect(leg).not.toHaveProperty('airlines');
+        expect(next.passengers.adults).toBe(2);
+        expect(next).not.toHaveProperty('preferenceScope');
+        if (legNumber !== longLeg) {
+          expect(leg.maxStops).toBe(0);
+          expect(next.maxStops).toBe(0);
+        }
+        if (leg.date !== '2027-01-20') return response([]);
+        return response([
+          flight(
+            leg.fromAirport,
+            leg.toAirport,
+            50,
+            legNumber === 1 ? '2027-01-20T08:00' : '2027-01-20T12:00',
+            legNumber === 1 ? '2027-01-20T10:00' : '2027-01-20T18:00',
+          ),
+        ]);
+      },
+      {
+        graph: graph([['HAA', lon]]),
+        request: req,
+        options: {
+          minBufferMinutes: 120,
+          maxBufferMinutes: 720,
+          ...(scope ? { preferenceScope: scope } : {}),
+        },
+      },
+    );
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]).toMatchObject({
+      leg1Cabin: scope === 'all-segments' || longLeg === 1 ? 'business' : 'economy',
+      leg2Cabin: scope === 'all-segments' || longLeg === 2 ? 'business' : 'economy',
+    });
+    expect(req).toEqual(original);
+  },
+);
+it('defaults to a 2–12 hour transfer window and rejects longer waits', () => {
+  expect(DEFAULT_TRANSFER_OPTIONS).toMatchObject({
+    minBufferMinutes: 120,
+    maxBufferMinutes: 720,
+    preferenceScope: 'long-leg',
+  });
+  const first: TimedFlight = {
+    flight: flight('AAA', 'HAA', 10),
+    departure: 0,
+    arrival: 60_000,
+    cabin: 'economy',
+  };
+  const second = (wait: number): TimedFlight => ({
+    flight: flight('HAA', 'BBB', 20),
+    departure: first.arrival + wait * 60_000,
+    arrival: first.arrival + (wait + 60) * 60_000,
+    cabin: 'business',
+  });
+  expect(
+    joinFlights(
+      [first],
+      [second(120), second(720), second(721)],
+      DEFAULT_TRANSFER_OPTIONS,
+      'HAA',
+    ).map((r) => r.transferMinutes),
+  ).toEqual([120, 720]);
 });

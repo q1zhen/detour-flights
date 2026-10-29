@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { Badge, Button } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
-import type { Flight } from '../lib/types';
+import type { Cabin, Flight } from '../lib/types';
 import {
   bookingUrl,
   carbonComparison,
@@ -10,6 +10,7 @@ import {
   formatPrice,
 } from '../lib/format';
 import { FlightDirection } from './FlightDirection';
+import { CabinBadge } from './CabinBadge';
 import { SegmentDetails } from './SegmentDetails';
 import { LayoverDetails } from './LayoverDetails';
 import { FareDetails } from './FareDetails';
@@ -18,10 +19,12 @@ export function FlightCard({
   flight,
   currency,
   cheapest,
+  cabin,
 }: {
   flight: Flight;
   currency: string;
   cheapest: boolean;
+  cabin?: Cabin;
 }) {
   const segments = flight.segments ?? [];
   const carbon = carbonComparison(flight.carbon?.emission, flight.carbon?.typicalOnRoute);
@@ -41,6 +44,11 @@ export function FlightCard({
               {formatDuration(flightMinutes(flight))} <small>total</small>
             </strong>
             <span>{airlines}</span>
+            {cabin && (
+              <span className="cabin-labels">
+                <CabinBadge cabin={cabin} />
+              </span>
+            )}
           </span>
           <span className="flight-carbon">
             {flight.carbon?.emission > 0 ? (

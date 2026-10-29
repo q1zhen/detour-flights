@@ -50,12 +50,16 @@ price-pruned, failed, and cancelled states in compact rows, with a completed-mid
 progress bar. Cancelled work does not count toward completion. Cancel keeps completed results and
 aborts pending work; starting another search clears the previous run.
 
-The form adds a separate self-transfer window (default 2–24 hours; configurable
+The form adds a separate self-transfer window (default 2–12 hours; configurable
 from 0 to 168 hours at minute precision). The shorter leg **must be nonstop**:
 both API stop-limit fields are forced to zero and responses are checked for
 exactly one segment with zero stops. The selected stop limit applies to the
-longer ticket and to regular flights. Airline, cabin, traveler, currency, and
-within-ticket layover filters are preserved. Departure/arrival time bars constrain
+longer ticket and to regular flights. Airline and class controls are always visible.
+By default, they apply only to the longer self-transfer ticket; the shorter ticket
+uses economy with any airline. The scope switch applies both selections to all
+self-transfer segments instead. Regular searches always use the selected airline
+and class, regardless of this switch. Traveler, currency, and within-ticket
+layover filters are preserved. Departure/arrival time bars constrain
 only the original departure/final arrival. Connection allow/block filters include
 the midpoint as well as within-ticket connections. The self-transfer buffer is
 independent of within-ticket layover limits.
@@ -71,7 +75,9 @@ Self-transfer cards use the same route timeline, local endpoint times, stop
 markers, total duration and price layout as regular flights. The ticket boundary
 has a distinct **Self-transfer** marker; ordinary connections retain their usual
 markers. Expanding the combined row reveals the two independently expandable
-tickets and their booking links.
+tickets and their booking links. Every card labels its requested cabin class;
+combined cards label each ticket separately. These labels retain the cabin used
+when pricing, since the API does not return a per-segment cabin field.
 
 Each midpoint keeps the long-leg-first search, with pricing and matching overlapped:
 
@@ -156,7 +162,8 @@ Automated coverage includes current API field names, omission versus zero, inclu
 
 Self-transfer tests cover directed candidate selection, geographic filtering,
 price pruning and the maximum-fare ceiling, range-minimum joins against a brute-force
-reference, nonstop short legs in both orientations, timezone/DST/date-line behavior,
+reference, nonstop short legs in both orientations, airline/class scope isolation,
+the default 2–12-hour window, per-ticket cabin labels, timezone/DST/date-line behavior,
 multiday windows, empty baselines, endpoint filters, partial failures, cancellation,
 concurrency, and deterministic dataset regeneration.
 

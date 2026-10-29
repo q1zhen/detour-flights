@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Callout, IconButton, Badge, TextField } from '@radix-ui/themes';
+import { useId, useState } from 'react';
+import { Button, Callout, IconButton, Badge, TextField, Switch } from '@radix-ui/themes';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon, SwitchIcon } from '@radix-ui/react-icons';
 import { buildRequest, initialValues, validateSearch } from '../lib/search';
 import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
@@ -8,7 +8,7 @@ import { SearchOptions } from './SearchOptions';
 import { SelectField } from './SelectField';
 import { CandidateFilterSliders } from './CandidateFilterSliders';
 import { DEFAULT_CANDIDATE_FILTERS } from '../lib/routes';
-import { validateTransferOptions } from '../lib/self-transfer';
+import { DEFAULT_TRANSFER_OPTIONS, validateTransferOptions } from '../lib/self-transfer';
 import type { TransferOptions } from '../lib/self-transfer';
 
 const cabins: { value: Cabin; label: string }[] = [
@@ -28,8 +28,15 @@ export function SearchForm({
 }) {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<string[]>([]);
-  const [minTransfer, setMinTransfer] = useState('2');
-  const [maxTransfer, setMaxTransfer] = useState('24');
+  const preferenceId = useId();
+  const [minTransfer, setMinTransfer] = useState(
+    String(DEFAULT_TRANSFER_OPTIONS.minBufferMinutes / 60),
+  );
+  const [maxTransfer, setMaxTransfer] = useState(
+    String(DEFAULT_TRANSFER_OPTIONS.maxBufferMinutes / 60),
+  );
+  const [preferenceScope, setPreferenceScope] =
+    useState<NonNullable<TransferOptions['preferenceScope']>>('long-leg');
   const [candidateFilters, setCandidateFilters] = useState(() => ({
     ...DEFAULT_CANDIDATE_FILTERS,
   }));
@@ -47,6 +54,7 @@ export function SearchForm({
           minBufferMinutes: Number(minTransfer) * 60,
           maxBufferMinutes: Number(maxTransfer) * 60,
           candidateFilters: { ...candidateFilters },
+          preferenceScope,
         };
         if (!minTransfer.trim() || !maxTransfer.trim() || !validateTransferOptions(options))
           nextErrors.push(
@@ -64,13 +72,6 @@ export function SearchForm({
           </Badge>
           <div className="travel-preferences">
             <TravelerPicker value={values.passengers} onChange={(v) => update('passengers', v)} />
-            <span className="toolbar-divider" />
-            <SelectField
-              label="Cabin class"
-              value={values.seat}
-              onChange={(v) => update('seat', v)}
-              options={cabins}
-            />
           </div>
         </div>
         <div className="route-grid one-way">
@@ -127,6 +128,48 @@ export function SearchForm({
             <MagnifyingGlassIcon width="18" height="18" />
             Search
           </Button>
+        </div>
+        <div className="flight-preferences">
+          <label className="field">
+            <span>Airline / alliance</span>
+            <TextField.Root
+              aria-label="Airline or alliance codes"
+              value={values.outboundAirlines}
+              onChange={(event) => update('outboundAirlines', event.target.value.toUpperCase())}
+              placeholder="Any · AA, STAR_ALLIANCE"
+              list={`${preferenceId}-alliances`}
+            />
+            <datalist id={`${preferenceId}-alliances`}>
+              <option value="ONEWORLD">Oneworld</option>
+              <option value="SKYTEAM">SkyTeam</option>
+              <option value="STAR_ALLIANCE">Star Alliance</option>
+            </datalist>
+          </label>
+          <div className="field">
+            <label htmlFor={`${preferenceId}-cabin`}>Class</label>
+            <SelectField
+              id={`${preferenceId}-cabin`}
+              label="Cabin class"
+              value={values.seat}
+              onChange={(value) => update('seat', value)}
+              options={cabins}
+            />
+          </div>
+          <div className="field preference-scope">
+            <span id={`${preferenceId}-scope-label`}>Self-transfer scope</span>
+            <label className="preference-switch" htmlFor={`${preferenceId}-scope`}>
+              <Switch
+                id={`${preferenceId}-scope`}
+                disabled={loading}
+                aria-label="Apply airline and class to all self-transfer segments"
+                checked={preferenceScope === 'all-segments'}
+                onCheckedChange={(checked) =>
+                  setPreferenceScope(checked ? 'all-segments' : 'long-leg')
+                }
+              />
+              <span>{preferenceScope === 'all-segments' ? 'All segments' : 'Long leg only'}</span>
+            </label>
+          </div>
         </div>
         <SearchOptions values={values} update={update} disabled={loading} />
         <div className="transfer-options">

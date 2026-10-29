@@ -3,6 +3,7 @@ import type { TransferResult } from '../lib/self-transfer';
 import { formatDuration, formatPrice } from '../lib/format';
 import { FlightDirection } from './FlightDirection';
 import { FlightCard } from './FlightCard';
+import { CabinBadge } from './CabinBadge';
 
 export function SelfTransferCard({
   result,
@@ -34,6 +35,10 @@ export function SelfTransferCard({
               {formatDuration(result.durationMinutes)} <small>total</small>
             </strong>
             <span>{airlines || 'Airline unavailable'}</span>
+            <span className="cabin-labels">
+              <CabinBadge cabin={result.leg1Cabin} ticket={1} />
+              <CabinBadge cabin={result.leg2Cabin} ticket={2} />
+            </span>
             <small>
               {formatDuration(result.transferMinutes)} transfer at {result.midpoint}
             </small>
@@ -55,12 +60,22 @@ export function SelfTransferCard({
         </summary>
         <div className="flight-details-content transfer-tickets">
           <h3>Ticket 1 · To {result.midpoint}</h3>
-          <FlightCard flight={result.leg1} currency={currency} cheapest={false} />
+          <FlightCard
+            flight={result.leg1}
+            currency={currency}
+            cabin={result.leg1Cabin}
+            cheapest={false}
+          />
           <p className="transfer-divider">
             Self-transfer at {result.midpoint} · {formatDuration(result.transferMinutes)}
           </p>
           <h3>Ticket 2 · From {result.midpoint}</h3>
-          <FlightCard flight={result.leg2} currency={currency} cheapest={false} />
+          <FlightCard
+            flight={result.leg2}
+            currency={currency}
+            cabin={result.leg2Cabin}
+            cheapest={false}
+          />
         </div>
       </details>
     </article>

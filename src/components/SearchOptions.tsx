@@ -23,7 +23,6 @@ export function SearchOptions({
 }) {
   const active =
     values.stops !== 'any' ||
-    values.outboundAirlines ||
     values.minLayover ||
     values.maxLayover ||
     values.allowConnections ||
@@ -68,21 +67,6 @@ export function SearchOptions({
               options={stopOptions}
             />
           </div>
-          <label className="field">
-            <span>Airlines / alliances</span>
-            <TextField.Root
-              aria-label="Airline or alliance codes"
-              value={values.outboundAirlines}
-              onChange={(e) => update('outboundAirlines', e.target.value.toUpperCase())}
-              placeholder="Any · AA, STAR_ALLIANCE"
-              list="alliance-codes"
-            />
-            <datalist id="alliance-codes">
-              <option value="ONEWORLD">Oneworld</option>
-              <option value="SKYTEAM">SkyTeam</option>
-              <option value="STAR_ALLIANCE">Star Alliance</option>
-            </datalist>
-          </label>
           <div className="field">
             <span>
               Within-ticket layover <small>minutes</small>

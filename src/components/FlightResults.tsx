@@ -80,6 +80,7 @@ export function FlightResults({
               key={`${flight.googleFlightsUrl || JSON.stringify(flight)}-${index}`}
               flight={flight}
               currency={request.currency}
+              cabin={request.seat}
               cheapest={flight.price === cheapest}
             />
           ))}

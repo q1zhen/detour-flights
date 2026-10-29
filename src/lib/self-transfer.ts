@@ -2,16 +2,18 @@ import { searchFlights } from './api';
 import { addDays, localDateAt, localToEpoch } from './flight-time';
 import { candidates, DEFAULT_CANDIDATE_FILTERS, validCandidateFilters } from './routes';
 import type { CandidateFilters, MidpointCandidate, RouteGraph } from './routes';
-import type { Flight, FlightTime, SearchRequest, SearchResponse } from './types';
+import type { Cabin, Flight, FlightTime, SearchRequest, SearchResponse } from './types';
 
 export interface TransferOptions {
   minBufferMinutes: number;
   maxBufferMinutes: number;
   candidateFilters?: CandidateFilters;
+  preferenceScope?: 'long-leg' | 'all-segments';
 }
 export const DEFAULT_TRANSFER_OPTIONS: TransferOptions = {
   minBufferMinutes: 120,
-  maxBufferMinutes: 1440,
+  maxBufferMinutes: 720,
+  preferenceScope: 'long-leg',
 };
 export function validateTransferOptions(options: TransferOptions) {
   const { minBufferMinutes: min, maxBufferMinutes: max } = options;
@@ -20,6 +22,9 @@ export function validateTransferOptions(options: TransferOptions) {
     min >= 0 &&
     max >= min &&
     max <= 10080 &&
+    (options.preferenceScope === undefined ||
+      options.preferenceScope === 'long-leg' ||
+      options.preferenceScope === 'all-segments') &&
     validCandidateFilters(options.candidateFilters ?? DEFAULT_CANDIDATE_FILTERS)
   );
 }
@@ -41,6 +46,7 @@ export interface MidpointProgress extends MidpointCandidate {
 }
 export interface TimedFlight {
   flight: Flight;
+  cabin: Cabin;
   departure: number;
   arrival: number;
 }
@@ -49,6 +55,8 @@ export interface TransferResult {
   midpoint: string;
   leg1: Flight;
   leg2: Flight;
+  leg1Cabin: Cabin;
+  leg2Cabin: Cabin;
   price: number;
   transferMinutes: number;
   durationMinutes: number;
@@ -81,6 +89,7 @@ function normalize(
   original: SearchRequest,
   leg: 1 | 2,
   nonstop: boolean,
+  cabin: Cabin,
 ) {
   const out: TimedFlight[] = [];
   let skipped = 0;
@@ -109,7 +118,7 @@ function normalize(
     const key = flightKey(flight);
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ flight, departure, arrival });
+    out.push({ flight, departure, arrival, cabin });
   }
   return { flights: out, skipped };
 }
@@ -171,6 +180,8 @@ export function joinFlights(
         midpoint,
         leg1: first.flight,
         leg2: second.flight,
+        leg1Cabin: first.cabin,
+        leg2Cabin: second.cabin,
         price: first.flight.price + second.flight.price,
         transferMinutes: (second.departure - first.arrival) / 60_000,
         durationMinutes: (second.arrival - first.departure) / 60_000,
@@ -282,6 +293,12 @@ export async function searchSelfTransfers({
       ...(nonstop ? { maxStops: 0 } : {}),
       ...(Object.keys(filters).length ? { filters } : {}),
     };
+    // Keep the regular request untouched. By default only the longer ticket
+    // inherits its cabin and airline/alliance selection.
+    if (nonstop && options.preferenceScope !== 'all-segments') {
+      next.seat = 'economy';
+      delete next.flights[0].airlines;
+    }
     if (!Object.keys(filters).length) delete next.filters;
     const key = JSON.stringify(next);
     let pending = cache.get(key);
@@ -291,7 +308,17 @@ export async function searchSelfTransfers({
     }
     const data = await pending;
     check();
-    const normalized = normalize(data.flights, graph, from, to, date, request, leg, nonstop);
+    const normalized = normalize(
+      data.flights,
+      graph,
+      from,
+      to,
+      date,
+      request,
+      leg,
+      nonstop,
+      next.seat,
+    );
     state.skippedFlights += normalized.skipped;
     return normalized.flights;
   }

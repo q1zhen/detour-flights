@@ -178,6 +178,8 @@ const transferProgress: TransferProgress = {
     {
       id: 'split',
       midpoint: 'ORD',
+      leg1Cabin: 'economy',
+      leg2Cabin: 'business',
       leg1: { ...oneWayFlight, price: 100, segments: [oneWayFlight.segments[0]] },
       leg2: { ...oneWayFlight, price: 120, segments: [oneWayFlight.segments[1]] },
       price: 220,
@@ -310,4 +312,41 @@ it('reports completed midpoint progress and does not count cancelled work as com
   const pending = renderToStaticMarkup(<MidpointSidebar progress={null} loading />);
   expect(pending).toContain('<progress');
   expect(pending).not.toContain('value=');
+});
+
+it('keeps airline and class visible, defaults to long-leg scope, and uses the 2–12 hour window', () => {
+  const html = renderToStaticMarkup(
+    <SearchForm onSearch={() => {}} loading={false} onCancel={() => {}} />,
+  );
+  const advanced = html.indexOf('<details class="search-options"');
+  expect(html.indexOf('Airline / alliance')).toBeLessThan(advanced);
+  expect(html.indexOf('aria-label="Cabin class"')).toBeLessThan(advanced);
+  expect(html).toContain('role="switch"');
+  expect(html).toContain('aria-checked="false"');
+  expect(html).toContain('Long leg only');
+  expect(html).toContain('Self-transfer scope');
+  expect(html).toContain('value="12"');
+  const loading = renderToStaticMarkup(
+    <SearchForm onSearch={() => {}} loading onCancel={() => {}} />,
+  );
+  expect(loading).toMatch(/<button[^>]*role="switch"[^>]*disabled/);
+});
+it('labels the requested cabin on regular cards and each separate ticket', () => {
+  const req = buildRequest({ ...initialValues(), from: 'JFK', to: 'LAX', seat: 'premium-economy' });
+  const regular = renderToStaticMarkup(
+    <FlightResults
+      data={{ flights: [oneWayFlight], metadata: emptyMetadata }}
+      request={req}
+      loading={false}
+    />,
+  );
+  expect(regular).toContain('aria-label="Cabin class: Premium economy"');
+  const split = renderToStaticMarkup(
+    <SelfTransferCard result={transferProgress.results[0]} currency="USD" baselinePrice={553} />,
+  );
+  const summary = split.slice(0, split.indexOf('</summary>'));
+  expect(summary).toContain('aria-label="Ticket 1 · Cabin class: Economy"');
+  expect(summary).toContain('aria-label="Ticket 2 · Cabin class: Business"');
+  expect(split).toContain('aria-label="Cabin class: Economy"');
+  expect(split).toContain('aria-label="Cabin class: Business"');
 });
