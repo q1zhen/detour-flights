@@ -30,10 +30,8 @@ export function FlightCard({
       aria-label={`${airlines}, ${formatPrice(flight.price, currency)}`}
     >
       <details className="flight-details">
-        <summary
-          className="flight-row"
-          aria-label={`Flight details: ${airlines}, ${formatPrice(flight.price, currency)}`}
-        >
+        <summary className="flight-row">
+          <span className="sr-only">Flight details: </span>
           <FlightDirection segments={segments} />
           <span className="flight-meta">
             <Tooltip content="Flight time excludes layovers">
@@ -106,11 +104,14 @@ export function FlightCard({
           </div>
           <div className="details-footnote">
             <span>Local times · Flight time excludes layovers</span>
-            {flight.carbon?.typical_on_route > 0 && (
-              <span>
-                Typical emissions: {(flight.carbon.typical_on_route / 1000).toLocaleString()} kg CO₂
-              </span>
-            )}
+            <span>
+              CO₂:{' '}
+              {flight.carbon?.emission > 0
+                ? `${(flight.carbon.emission / 1000).toLocaleString()} kg`
+                : 'unavailable'}
+              {flight.carbon?.typical_on_route > 0 &&
+                ` · typical ${(flight.carbon.typical_on_route / 1000).toLocaleString()} kg`}
+            </span>
           </div>
         </div>
       </details>

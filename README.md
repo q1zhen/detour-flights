@@ -2,6 +2,8 @@
 
 A simple React + TypeScript flight-search frontend for [gflight.q1z.dev](https://gflight.q1z.dev). UI components use [Radix Themes](https://www.radix-ui.com/themes): selects, popovers, text fields, buttons, badges, callouts, and loading skeletons.
 
+The interface uses compact flight rows, an inline search form, and expandable itinerary timelines. Flight time is labeled “in air” because the API does not supply total elapsed travel time.
+
 The app currently supports one-way searches only. Round-trip support is temporarily removed.
 
 The browser calls the public API directly. No credentials, API key, backend, or environment variables are needed. There are no mock flight results in the app.
@@ -28,22 +30,21 @@ npm run format:check
 
 ## API coverage
 
-| API capability                           | Interface                                                                         |
-| ---------------------------------------- | --------------------------------------------------------------------------------- |
-| One-way searches                         | One departure leg with no return-date controls                                    |
-| All four cabins                          | Economy, premium economy, business, first class                                   |
-| All passenger categories                 | Adults, children, infants in seats, infants on laps; 1–9 travelers                |
-| Overall stop limit                       | Any, nonstop, or up to 1, 2, or 3 stops                                           |
-| Per-leg stop overrides                   | Inherit the overall limit, unrestricted, or 0–3 stops                             |
-| Per-leg airlines                         | Up to 50 two-character codes, including alphanumeric codes                        |
-| Currency and language                    | Editable codes with common suggestions; not limited to the suggestions            |
-| Prices, airlines, and result identifiers | Flight cards and expandable details                                               |
-| Every flight segment                     | Airport codes/names, departure and arrival dates/times, flight duration, aircraft |
-| Carbon emissions                         | Kilograms of CO₂, typical route emissions, percentage comparison                  |
-| Google Flights links                     | Booking details with the complete itinerary selected; clear unavailable state     |
-| Airline and alliance metadata            | Expandable metadata section, including when no flights are found                  |
-| API validation and service errors        | Readable errors with field paths; form values retained                            |
-| Health endpoint                          | Service status in the desktop header                                              |
+| API capability                    | Interface                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| One-way searches                  | One departure leg with no return-date controls                                    |
+| All four cabins                   | Economy, premium economy, business, first class                                   |
+| All passenger categories          | Adults, children, infants in seats, infants on laps; 1–9 travelers                |
+| Stop limit                        | Any, nonstop, or up to 1, 2, or 3 stops                                           |
+| Airline filter                    | Up to 50 two-character codes, including alphanumeric codes                        |
+| Currency and language             | Editable codes with common suggestions; not limited to the suggestions            |
+| Prices and airlines               | Flight cards and expandable details                                               |
+| Every flight segment              | Airport codes/names, departure and arrival dates/times, flight duration, aircraft |
+| Carbon emissions                  | Kilograms of CO₂, typical route emissions, percentage comparison                  |
+| Google Flights links              | Booking details with the complete itinerary selected; clear unavailable state     |
+| Airline and alliance metadata     | Expandable metadata section, including when no flights are found                  |
+| API validation and service errors | Readable errors with field paths; form values retained                            |
+| Health endpoint                   | Compact service status in the header                                              |
 
 Results can also be sorted by price or flight time. Searches have loading, cancellation, empty, error, and retry-through-resubmission states. A superseded or cancelled request cannot overwrite a newer search.
 
@@ -61,12 +62,12 @@ Results can also be sorted by price or flight time. Searches have loading, cance
 - `src/App.tsx`: page composition and request lifecycle.
 - `src/components/SearchForm.tsx`: route, departure date, and validation.
 - `src/components/TravelerPicker.tsx`: passenger popover and counters.
-- `src/components/SearchOptions.tsx`: overall and per-leg search filters.
+- `src/components/SearchOptions.tsx`: compact stop, airline, currency, and language filters.
 - `src/components/SelectField.tsx`: reusable typed Radix selector.
 - `src/components/FlightResults.tsx`: result states, sorting, and metadata.
-- `src/components/FlightCard.tsx`: itinerary composition, total price, emissions, and booking link.
-- `src/components/FlightDirection.tsx`: direction summary with its own dates, stops, and flight time.
-- `src/components/SegmentDetails.tsx`: reusable individual segment details.
+- `src/components/FlightCard.tsx`: compact expandable rows with price, emissions, timeline, and booking link.
+- `src/components/FlightDirection.tsx`: departure/arrival times and a route line with connection airports.
+- `src/components/SegmentDetails.tsx`: reusable segment timeline with dates, airports, duration, and aircraft.
 - `src/components/AppHeader.tsx`: navigation and API health.
 - `src/lib/`: API types/client, request construction, validation, and formatting.
 
