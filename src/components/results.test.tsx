@@ -72,6 +72,10 @@ it('renders connecting one-way flights without return details', () => {
   );
   expect(html).toContain('1 stop');
   expect(html).toContain('6h 0m');
+  expect(html).toContain('2h 0m');
+  expect(html).toContain('layover');
+  expect(html).toContain('timeline-start');
+  expect(html).toContain('timeline-end');
   expect(html).toContain('274 kg CO₂');
   expect(html).not.toContain('Return');
   expect(html).not.toContain('Round-trip');
@@ -86,4 +90,6 @@ it('offers only a departure date and no round-trip or return-flight controls', (
   expect(html).not.toContain('Round trip');
   expect(html).not.toContain('Return');
   expect(html).not.toContain('Trip type');
+  expect(html).not.toContain('Currency');
+  expect(html).not.toContain('Language');
 });

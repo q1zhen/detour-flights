@@ -21,8 +21,10 @@ button:disabled {
   --blue-9: #1769e0;
   --blue-10: #105bc7;
   --blue-11: #135bbd;
-  background: #f8f9fb;
   color: #263142;
+}
+.radix-themes[data-is-root-theme='true'] {
+  background: #f8f9fb;
   min-height: 100vh;
 }
 .app-shell {
@@ -66,7 +68,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   color: #697789;
 }
 .service-status > span {
@@ -167,9 +169,9 @@ button:disabled {
   font-weight: 550;
 }
 .field small {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
-  color: #8792a2;
+  color: #526176;
   margin-left: 3px;
 }
 .field .rt-TextFieldRoot,
@@ -238,7 +240,8 @@ summary::-webkit-details-marker {
 }
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(160px, 1fr) minmax(180px, 2fr);
+  max-width: 620px;
   gap: 14px;
   margin: 12px 0 4px;
   padding-top: 12px;
@@ -300,7 +303,7 @@ summary::-webkit-details-marker {
   font-size: 12px;
 }
 .muted {
-  color: #738094;
+  color: #526176;
   font-size: 12px;
   font-weight: 400;
 }
@@ -311,7 +314,7 @@ summary::-webkit-details-marker {
 }
 .result-count > span {
   margin-left: 5px;
-  color: #8792a1;
+  color: #526176;
 }
 .flight-list {
   display: flex;
@@ -330,10 +333,9 @@ summary::-webkit-details-marker {
 }
 .flight-row {
   display: grid;
-  grid-template-columns: minmax(270px, 1.6fr) minmax(150px, 1fr) minmax(105px, 0.7fr) minmax(
-      95px,
-      0.65fr
-    ) 18px;
+  grid-template-columns:
+    minmax(270px, 1.6fr) minmax(150px, 1fr) minmax(105px, 0.7fr) minmax(95px, 0.65fr)
+    18px;
   align-items: center;
   gap: 24px;
   min-height: 96px;
@@ -376,13 +378,13 @@ summary::-webkit-details-marker {
 .route-endpoint > span {
   font-size: 13px;
   font-weight: 600;
-  color: #65768e;
+  color: #42536b;
 }
 .route-arrival {
   text-align: right;
 }
 .route-endpoint sup {
-  font-size: 10px;
+  font-size: 12px;
   margin-left: 3px;
   color: #b74435;
   letter-spacing: 0;
@@ -395,8 +397,8 @@ summary::-webkit-details-marker {
   padding-bottom: 12px;
 }
 .stop-label {
-  font-size: 10px;
-  color: #6e7f96;
+  font-size: 12px;
+  color: #42536b;
   margin-bottom: 7px;
 }
 .route-path {
@@ -439,8 +441,8 @@ summary::-webkit-details-marker {
 .connection-marker > span {
   position: absolute;
   top: 13px;
-  font-size: 10px;
-  color: #61728a;
+  font-size: 12px;
+  color: #42536b;
 }
 .flight-meta {
   display: flex;
@@ -452,13 +454,13 @@ summary::-webkit-details-marker {
   font-weight: 600;
 }
 .flight-meta small {
-  color: #7b8797;
-  font-size: 10px;
+  color: #526176;
+  font-size: 12px;
   font-weight: 400;
 }
 .flight-meta > span {
   font-size: 12px;
-  color: #65748b;
+  color: #42536b;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -469,7 +471,7 @@ summary::-webkit-details-marker {
   font-size: 12px;
 }
 .flight-carbon > span:last-child {
-  font-size: 10px;
+  font-size: 12px;
 }
 .carbon-lower {
   color: #237a54;
@@ -490,11 +492,11 @@ summary::-webkit-details-marker {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 10px;
-  color: #7a8799;
+  font-size: 12px;
+  color: #526176;
 }
 .flight-price .rt-Badge {
-  font-size: 9px;
+  font-size: 12px;
   padding: 1px 4px;
 }
 .flight-details-content {
@@ -516,37 +518,47 @@ summary::-webkit-details-marker {
 .details-toolbar .rt-Button {
   font-size: 12px;
 }
-.segment-list {
-  max-width: 820px;
+.itinerary-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 960px;
 }
-.segment-timeline {
+.itinerary-timeline > li {
   position: relative;
-  margin-left: 8px;
-  padding-left: 24px;
+  margin: 0;
+  padding-left: 30px;
 }
-.segment-timeline::before {
+.itinerary-timeline > li::before {
   content: '';
   position: absolute;
-  top: 8px;
-  bottom: 25px;
-  left: 0;
-  border-left: 1.5px solid #9cacc1;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #8b9bb0;
+}
+.itinerary-timeline > .timeline-start::before {
+  top: 12px;
+}
+.itinerary-timeline > .timeline-end::before {
+  bottom: auto;
+  height: 12px;
 }
 .timeline-point {
   display: grid;
-  grid-template-columns: 118px 1fr;
-  gap: 16px;
-  position: relative;
+  grid-template-columns: 140px 1fr;
+  gap: 20px;
 }
-.timeline-point::before {
+.timeline-point::after {
   content: '';
   position: absolute;
-  left: -29px;
-  top: 4px;
-  width: 10px;
-  height: 10px;
+  left: 1px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  border: 1.5px solid #8395ac;
+  border: 2px solid #6b7e98;
   background: white;
 }
 .timeline-time {
@@ -555,42 +567,60 @@ summary::-webkit-details-marker {
   gap: 3px;
 }
 .timeline-time > strong {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 650;
+  line-height: 24px;
   font-variant-numeric: tabular-nums;
 }
 .timeline-time > span {
-  font-size: 10px;
-  color: #77859a;
+  font-size: 13px;
+  color: #42536b;
+  line-height: 20px;
 }
 .timeline-airport {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 24px;
 }
 .timeline-airport > strong {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
 }
 .timeline-airport > span {
-  color: #64748b;
+  color: #35465e;
 }
 .timeline-flight {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  color: #6d7f95;
-  font-size: 11px;
-  padding: 14px 0;
+  gap: 6px 20px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  color: #42536b;
+  font-size: 14px;
 }
-.connection-note {
-  margin: 0 0 0 8px;
-  padding: 16px 24px;
-  border-left: 1.5px dashed #bbc6d4;
-  color: #99662c;
-  font-size: 11px;
+.timeline-flight > span:first-child {
+  font-weight: 550;
+}
+.timeline-layover {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.layover-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  background: #fff2db;
+  color: #78470c;
+  padding: 9px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+.layover-label strong {
+  font-size: 15px;
+  font-weight: 650;
 }
 .details-footnote {
   display: flex;
@@ -600,8 +630,8 @@ summary::-webkit-details-marker {
   border-top: 1px solid #e8ecf2;
   margin-top: 18px;
   padding-top: 10px;
-  font-size: 10px;
-  color: #7c899c;
+  font-size: 12px;
+  color: #526176;
 }
 .empty-state {
   text-align: center;
@@ -622,7 +652,7 @@ summary::-webkit-details-marker {
 }
 .metadata {
   margin-top: 18px;
-  font-size: 11px;
+  font-size: 13px;
   color: #76869a;
 }
 .metadata summary {
@@ -640,7 +670,7 @@ summary::-webkit-details-marker {
 }
 .metadata-body strong {
   font-weight: 550;
-  font-size: 11px;
+  font-size: 13px;
 }
 .metadata-chips {
   display: flex;
@@ -649,7 +679,7 @@ summary::-webkit-details-marker {
   margin-top: 6px;
 }
 .metadata-chips .rt-Badge {
-  font-size: 10px;
+  font-size: 12px;
 }
 @media (max-width: 1000px) {
   .flight-row {
@@ -730,16 +760,16 @@ summary::-webkit-details-marker {
     font-size: 18px;
   }
   .results-heading p {
-    font-size: 10px;
+    font-size: 12px;
     max-width: 200px;
     line-height: 1.5;
   }
   .results-heading .rt-SelectTrigger {
-    font-size: 11px;
+    font-size: 13px;
     max-width: 145px;
   }
   .result-count {
-    font-size: 11px;
+    font-size: 13px;
   }
   .flight-row {
     grid-template-columns: minmax(0, 1fr) auto 14px;
@@ -769,7 +799,7 @@ summary::-webkit-details-marker {
     font-size: 12px;
   }
   .flight-meta > span {
-    font-size: 11px;
+    font-size: 13px;
   }
   .flight-price {
     grid-column: 2;
@@ -794,26 +824,27 @@ summary::-webkit-details-marker {
     font-size: 13px;
   }
   .timeline-point {
-    grid-template-columns: 91px 1fr;
+    grid-template-columns: 110px 1fr;
     gap: 12px;
   }
   .timeline-airport {
     flex-direction: column;
     gap: 2px;
-    font-size: 11px;
+    font-size: 13px;
   }
   .timeline-time > strong {
-    font-size: 16px;
+    font-size: 19px;
   }
   .timeline-time > span {
-    font-size: 9px;
+    font-size: 13px;
   }
   .timeline-flight {
-    font-size: 10px;
-    padding: 12px 0;
+    font-size: 14px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .details-footnote {
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.5;
   }
 }
@@ -838,5 +869,75 @@ summary::-webkit-details-marker {
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Keep menu/popover dimensions owned by Radix, not the full-page theme. */
+.travel-preferences .rt-Button,
+.travel-preferences .rt-SelectTrigger {
+  font-size: 14px;
+}
+.field,
+.search-options > summary,
+.date-field input {
+  font-size: 14px;
+}
+.route-endpoint > span {
+  font-size: 15px;
+  color: #42536b;
+}
+.stop-label,
+.connection-marker > span {
+  font-size: 13px;
+  font-weight: 500;
+}
+.flight-meta > strong {
+  font-size: 16px;
+}
+.flight-meta > span,
+.flight-carbon {
+  font-size: 14px;
+}
+.flight-meta small,
+.flight-carbon > span:last-child {
+  font-size: 12px;
+}
+.flight-price > span,
+.results-heading p,
+.result-count {
+  font-size: 13px;
+}
+.rt-SelectContent {
+  max-height: var(--radix-select-content-available-height);
+}
+@media (max-width: 700px) {
+  .search-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .travel-preferences {
+    gap: 12px;
+    max-width: 100%;
+  }
+  .travel-preferences .rt-SelectTrigger {
+    max-width: 190px;
+  }
+  .flight-meta > span {
+    font-size: 14px;
+  }
+  .timeline-airport {
+    font-size: 14px;
+  }
+  .results-heading {
+    align-items: flex-start;
+  }
+  .results-heading p {
+    max-width: 220px;
+  }
+  .layover-label {
+    font-size: 13px;
+  }
+  .layover-label strong {
+    font-size: 14px;
   }
 }

@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Badge, Button, Tooltip } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import type { Flight } from '../lib/types';
@@ -10,6 +11,7 @@ import {
 } from '../lib/format';
 import { FlightDirection } from './FlightDirection';
 import { SegmentDetails } from './SegmentDetails';
+import { LayoverDetails } from './LayoverDetails';
 
 export function FlightCard({
   flight,
@@ -84,26 +86,27 @@ export function FlightCard({
               <span className="muted">Booking link unavailable</span>
             )}
           </div>
-          <div className="segment-list">
-            {segments.length ? (
-              segments.map((segment, index) => (
-                <div key={index}>
-                  {index > 0 && (
-                    <div className="connection-note">
-                      {segments[index - 1].to_airport?.code === segment.from_airport?.code
-                        ? `Connection · ${segment.from_airport?.code || 'Airport unavailable'}`
-                        : `Transfer · ${segments[index - 1].to_airport?.code || '—'} → ${segment.from_airport?.code || '—'}`}
-                    </div>
-                  )}
-                  <SegmentDetails segment={segment} />
-                </div>
-              ))
-            ) : (
-              <p className="muted">Segment details unavailable</p>
-            )}
-          </div>
+          {segments.length ? (
+            <ol className="itinerary-timeline" aria-label="Flight itinerary">
+              {segments.map((segment, index) => (
+                <Fragment key={index}>
+                  {index > 0 && <LayoverDetails previous={segments[index - 1]} next={segment} />}
+                  <SegmentDetails
+                    segment={segment}
+                    first={index === 0}
+                    last={index === segments.length - 1}
+                  />
+                </Fragment>
+              ))}
+            </ol>
+          ) : (
+            <p className="muted">Segment details unavailable</p>
+          )}
           <div className="details-footnote">
-            <span>Local times · Flight time excludes layovers</span>
+            <span>
+              Local times · Layovers use local clock differences
+              {segments.length > 1 && '; clock changes may affect duration'}
+            </span>
             <span>
               CO₂:{' '}
               {flight.carbon?.emission > 0

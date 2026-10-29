@@ -1,10 +1,18 @@
 import type { Segment } from '../lib/types';
 import { formatDate, formatDuration, formatTime } from '../lib/format';
 
-export function SegmentDetails({ segment }: { segment: Segment }) {
+export function SegmentDetails({
+  segment,
+  first = false,
+  last = false,
+}: {
+  segment: Segment;
+  first?: boolean;
+  last?: boolean;
+}) {
   return (
-    <div className="segment-timeline">
-      <div className="timeline-point">
+    <>
+      <li className={`timeline-point ${first ? 'timeline-start' : ''}`}>
         <span className="timeline-time">
           <strong>{formatTime(segment.departure)}</strong>
           <span>{formatDate(segment.departure?.date)}</span>
@@ -13,12 +21,12 @@ export function SegmentDetails({ segment }: { segment: Segment }) {
           <strong>{segment.from_airport?.code || '—'}</strong>
           <span>{segment.from_airport?.name || 'Airport unavailable'}</span>
         </span>
-      </div>
-      <div className="timeline-flight">
-        <span>{formatDuration(segment.duration)}</span>
+      </li>
+      <li className="timeline-flight">
+        <span>{formatDuration(segment.duration)} flight</span>
         {segment.plane_type && <span>{segment.plane_type}</span>}
-      </div>
-      <div className="timeline-point">
+      </li>
+      <li className={`timeline-point ${last ? 'timeline-end' : ''}`}>
         <span className="timeline-time">
           <strong>{formatTime(segment.arrival)}</strong>
           <span>{formatDate(segment.arrival?.date)}</span>
@@ -27,7 +35,7 @@ export function SegmentDetails({ segment }: { segment: Segment }) {
           <strong>{segment.to_airport?.code || '—'}</strong>
           <span>{segment.to_airport?.name || 'Airport unavailable'}</span>
         </span>
-      </div>
-    </div>
+      </li>
+    </>
   );
 }

@@ -17,11 +17,7 @@ export function SearchOptions({
   values: SearchValues;
   update: <K extends keyof SearchValues>(key: K, value: SearchValues[K]) => void;
 }) {
-  const active =
-    values.stops !== 'any' ||
-    values.outboundAirlines ||
-    values.currency !== 'USD' ||
-    values.language !== 'en-US';
+  const active = values.stops !== 'any' || values.outboundAirlines;
   return (
     <details className="search-options">
       <summary>
@@ -30,9 +26,10 @@ export function SearchOptions({
         <ChevronDownIcon />
       </summary>
       <div className="options-grid">
-        <label className="field">
-          <span>Stops</span>
+        <div className="field">
+          <label htmlFor="stop-limit">Stops</label>
           <SelectField
+            id="stop-limit"
             label="Stops"
             value={values.stops}
             onChange={(v) => {
@@ -41,7 +38,7 @@ export function SearchOptions({
             }}
             options={stopOptions}
           />
-        </label>
+        </div>
         <label className="field">
           <span>
             Airlines <small>IATA</small>
@@ -54,34 +51,7 @@ export function SearchOptions({
             title="Up to 50 two-character codes, separated by commas"
           />
         </label>
-        <label className="field">
-          <span>Currency</span>
-          <TextField.Root
-            value={values.currency}
-            onChange={(e) => update('currency', e.target.value.toUpperCase())}
-            maxLength={3}
-            list="currencies"
-          />
-        </label>
-        <label className="field">
-          <span>Language</span>
-          <TextField.Root
-            value={values.language}
-            onChange={(e) => update('language', e.target.value)}
-            list="languages"
-          />
-        </label>
       </div>
-      <datalist id="currencies">
-        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'CNY', 'JPY', 'INR', 'SGD', 'CHF'].map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      <datalist id="languages">
-        {['en-US', 'en-GB', 'es', 'fr', 'de', 'it', 'pt-BR', 'zh-CN', 'ja', 'ko'].map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
     </details>
   );
 }

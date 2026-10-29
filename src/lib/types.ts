@@ -13,8 +13,6 @@ export interface SearchValues {
   to: string;
   departure: string;
   passengers: Passengers;
-  currency: string;
-  language: string;
   stops: StopChoice;
   outboundStops: LegStopChoice;
   outboundAirlines: string;

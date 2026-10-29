@@ -8,13 +8,13 @@ const valid = () => ({
   departure: '2027-01-20',
 });
 describe('flight search contract', () => {
-  it('normalizes codes and creates exactly one departure leg', () => {
+  it('normalizes airport codes, fixes locale defaults, and creates one departure leg', () => {
     const request = buildRequest({ ...valid(), currency: 'eur', language: ' fr ' });
     expect(request.flights).toEqual([
       { date: '2027-01-20', from_airport: 'JFK', to_airport: 'LAX' },
     ]);
-    expect(request.currency).toBe('EUR');
-    expect(request.language).toBe('fr');
+    expect(request.currency).toBe('USD');
+    expect(request.language).toBe('en-US');
     expect(request.max_stops).toBeNull();
   });
   it('distinguishes inherited, unrestricted, and zero-stop overrides', () => {

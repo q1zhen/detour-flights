@@ -12,8 +12,6 @@ export function initialValues(): SearchValues {
     to: '',
     departure: localDate(14),
     passengers: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
-    currency: 'USD',
-    language: 'en-US',
     stops: 'any',
     outboundStops: 'inherit',
     outboundAirlines: '',
@@ -54,9 +52,6 @@ export function validateSearch(values: SearchValues): string[] {
     errors.push('Choose 1–9 travelers in total.');
   if (values.passengers.infants_on_lap > values.passengers.adults)
     errors.push('Each infant on a lap needs an adult traveler.');
-  if (!/^[A-Z]{3}$/.test(values.currency.trim().toUpperCase()))
-    errors.push('Enter a three-letter currency code, such as USD or EUR.');
-  if (!values.language.trim()) errors.push('Enter a Google Flights language code, such as en-US.');
   for (const [label, value] of [['Outbound', values.outboundAirlines]]) {
     const codes = airlineCodes(value);
     if (codes.length > 50 || codes.some((code) => !/^[A-Z0-9]{2}$/.test(code)))
@@ -89,8 +84,8 @@ export function buildRequest(values: SearchValues): SearchRequest {
     trip: 'one-way',
     seat: values.seat,
     passengers: { ...values.passengers },
-    currency: values.currency.trim().toUpperCase(),
-    language: values.language.trim(),
+    currency: 'USD',
+    language: 'en-US',
     max_stops: values.stops === 'any' ? null : Number(values.stops),
   };
 }
