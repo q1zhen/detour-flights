@@ -6,6 +6,8 @@ import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
 import { TravelerPicker } from './TravelerPicker';
 import { SearchOptions } from './SearchOptions';
 import { SelectField } from './SelectField';
+import { validateTransferOptions } from '../lib/self-transfer';
+import type { TransferOptions } from '../lib/self-transfer';
 
 const cabins: { value: Cabin; label: string }[] = [
   { value: 'economy', label: 'Economy' },
@@ -18,12 +20,14 @@ export function SearchForm({
   loading,
   onCancel,
 }: {
-  onSearch: (request: SearchRequest) => void;
+  onSearch: (request: SearchRequest, options: TransferOptions) => void;
   loading: boolean;
   onCancel: () => void;
 }) {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<string[]>([]);
+  const [minTransfer, setMinTransfer] = useState('2');
+  const [maxTransfer, setMaxTransfer] = useState('24');
   function update<K extends keyof SearchValues>(key: K, value: SearchValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }));
   }
@@ -34,8 +38,16 @@ export function SearchForm({
       onSubmit={(event) => {
         event.preventDefault();
         const nextErrors = validateSearch(values);
+        const options = {
+          minBufferMinutes: Number(minTransfer) * 60,
+          maxBufferMinutes: Number(maxTransfer) * 60,
+        };
+        if (!minTransfer.trim() || !maxTransfer.trim() || !validateTransferOptions(options))
+          nextErrors.push(
+            'Choose an ordered self-transfer window between 0 and 168 hours, in whole minutes.',
+          );
         setErrors(nextErrors);
-        if (!nextErrors.length) onSearch(buildRequest(values));
+        if (!nextErrors.length) onSearch(buildRequest(values), options);
       }}
       aria-label="Flight search"
     >
@@ -111,6 +123,39 @@ export function SearchForm({
           </Button>
         </div>
         <SearchOptions values={values} update={update} disabled={loading} />
+        <div className="transfer-options">
+          <div>
+            <strong>Self-transfer window</strong>
+            <p>Time between separate tickets at the same airport.</p>
+          </div>
+          <label className="field">
+            <span>Minimum hours</span>
+            <TextField.Root
+              type="number"
+              min="0"
+              max="168"
+              step="0.5"
+              value={minTransfer}
+              onChange={(event) => setMinTransfer(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Maximum hours</span>
+            <TextField.Root
+              type="number"
+              min="0"
+              max="168"
+              step="0.5"
+              value={maxTransfer}
+              onChange={(event) => setMaxTransfer(event.target.value)}
+            />
+          </label>
+          <p className="transfer-filter-note">
+            The shorter leg must be nonstop. Stop limits apply to the longer ticket; layover limits
+            apply within tickets. Time bars apply to the whole journey. Allowed/blocked connections
+            include the midpoint.
+          </p>
+        </div>
       </fieldset>
       {errors.length > 0 && (
         <Callout.Root color="red" role="alert" mt="3">

@@ -146,3 +146,92 @@ it('renders accessible two-handle time bars and disables them during searches', 
   expect(html).toContain('aria-valuetext="23:59"');
   expect(html.match(/aria-disabled="true"/g)).toHaveLength(2);
 });
+
+import { MidpointSidebar, SelfTransferResults } from './SelfTransferResults';
+import type { TransferProgress } from '../lib/self-transfer';
+const transferProgress: TransferProgress = {
+  phase: 'joining',
+  baselinePrice: 553,
+  ceilingPrice: 700,
+  skippedFlights: 0,
+  midpoints: [
+    {
+      code: 'ORD',
+      airport: {
+        name: 'O’Hare',
+        city: 'Chicago',
+        country: 'US',
+        lat: 42,
+        lon: -88,
+        timezone: 'America/Chicago',
+        out: [],
+        in: [],
+      },
+      distanceKm: 4100,
+      longLeg: 2,
+      status: 'results',
+      resultCount: 1,
+      cheapestLong: 120,
+    },
+  ],
+  results: [
+    {
+      id: 'split',
+      midpoint: 'ORD',
+      leg1: { ...oneWayFlight, price: 100, segments: [oneWayFlight.segments[0]] },
+      leg2: { ...oneWayFlight, price: 120, segments: [oneWayFlight.segments[1]] },
+      price: 220,
+      durationMinutes: 480,
+      transferMinutes: 120,
+    },
+  ],
+};
+it('renders live midpoint statuses and independently bookable self-transfer tickets', () => {
+  const html = renderToStaticMarkup(
+    <>
+      <MidpointSidebar progress={transferProgress} loading />
+      <SelfTransferResults progress={transferProgress} loading error={null} currency="USD" />
+    </>,
+  );
+  expect(html).toContain('With results');
+  expect(html).toContain('Via ORD');
+  expect(html).toContain('Save $333');
+  expect(html).toContain('2h 0m');
+  expect(html).toContain('8h 0m');
+  expect(html).toContain('Ticket 1');
+  expect(html).toContain('Ticket 2');
+  expect(html.match(/>Google Flights/g)).toHaveLength(2);
+  expect(html).toContain('Matching flights, cheapest midpoint first');
+  expect(html).toContain('Combined fares up to $700');
+});
+it('distinguishes partial failures, cancellation and unavailable baseline prices', () => {
+  const progress = {
+    ...transferProgress,
+    phase: 'complete' as const,
+    baselinePrice: null,
+    ceilingPrice: null,
+    results: [],
+    skippedFlights: 2,
+    midpoints: transferProgress.midpoints.map((h) => ({
+      ...h,
+      status: 'error' as const,
+      resultCount: 0,
+    })),
+  };
+  const html = renderToStaticMarkup(
+    <SelfTransferResults progress={progress} loading={false} error={null} currency="USD" />,
+  );
+  expect(html).toContain('Results are partial');
+  expect(html).toContain('No priced regular flights');
+  expect(html).toContain('2 flight records omitted');
+  const cancelled = renderToStaticMarkup(
+    <SelfTransferResults
+      progress={{ ...progress, phase: 'cancelled' }}
+      loading={false}
+      error={null}
+      currency="USD"
+    />,
+  );
+  expect(cancelled).toContain('Search cancelled');
+  expect(cancelled).not.toContain('No matching self-transfers');
+});

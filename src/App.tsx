@@ -6,27 +6,59 @@ import { SearchForm } from './components/SearchForm';
 import { FlightResults } from './components/FlightResults';
 import { SearchError, searchFlights } from './lib/api';
 import type { SearchRequest, SearchResponse } from './lib/types';
+import { MidpointSidebar, SelfTransferResults } from './components/SelfTransferResults';
+import { loadRoutes } from './lib/routes';
+import { searchSelfTransfers } from './lib/self-transfer';
+import type { TransferOptions, TransferProgress } from './lib/self-transfer';
+import './self-transfer.css';
 
 export default function App() {
   const [data, setData] = useState<SearchResponse | null>(null);
   const [request, setRequest] = useState<SearchRequest | null>(null);
   const [loading, setLoading] = useState(false);
+  const [baselineLoading, setBaselineLoading] = useState(false);
+  const [transfer, setTransfer] = useState<TransferProgress | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const [error, setError] = useState<SearchError | null>(null);
   const [cancelled, setCancelled] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
-  async function search(next: SearchRequest) {
+  async function search(next: SearchRequest, options: TransferOptions) {
     controller.current?.abort();
     const active = new AbortController();
     controller.current = active;
     setLoading(true);
+    setBaselineLoading(true);
+    setTransfer(null);
+    setTransferError(null);
     setError(null);
     setCancelled(false);
     setData(null);
     setRequest(next);
     try {
       const result = await searchFlights(next, active.signal);
-      if (!active.signal.aborted) setData(result);
+      if (active.signal.aborted) return;
+      setData(result);
+      setBaselineLoading(false);
+      try {
+        const graph = await loadRoutes(active.signal);
+        if (active.signal.aborted) return;
+        await searchSelfTransfers({
+          graph,
+          request: next,
+          baseline: result.flights,
+          options,
+          signal: active.signal,
+          onProgress: (progress) => {
+            if (controller.current === active && !active.signal.aborted) setTransfer(progress);
+          },
+        });
+      } catch (failure) {
+        if (!active.signal.aborted)
+          setTransferError(
+            failure instanceof Error ? failure.message : 'Self-transfer search failed.',
+          );
+      }
     } catch (failure) {
       if (!active.signal.aborted)
         setError(
@@ -35,7 +67,10 @@ export default function App() {
             : new SearchError('Something went wrong. Please try again.'),
         );
     } finally {
-      if (controller.current === active) setLoading(false);
+      if (controller.current === active) {
+        setLoading(false);
+        setBaselineLoading(false);
+      }
     }
   }
   return (
@@ -52,7 +87,21 @@ export default function App() {
           onCancel={() => {
             controller.current?.abort();
             setLoading(false);
+            setBaselineLoading(false);
             setCancelled(true);
+            setTransfer((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    phase: 'cancelled',
+                    midpoints: previous.midpoints.map((hub) =>
+                      ['queued', 'pricing', 'ready', 'searching'].includes(hub.status)
+                        ? { ...hub, status: 'cancelled' }
+                        : hub,
+                    ),
+                  }
+                : null,
+            );
           }}
         />
         {error && (
@@ -77,7 +126,21 @@ export default function App() {
             Search cancelled.
           </p>
         )}
-        {!error && <FlightResults data={data} request={request} loading={loading} />}
+        {!error && request && (
+          <div className="search-workspace">
+            <MidpointSidebar progress={transfer} loading={loading} />
+            <div className="regular-results">
+              <h2 className="column-title">Regular flights</h2>
+              <FlightResults data={data} request={request} loading={baselineLoading} />
+            </div>
+            <SelfTransferResults
+              progress={transfer}
+              loading={loading}
+              error={transferError}
+              currency={request.currency}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
