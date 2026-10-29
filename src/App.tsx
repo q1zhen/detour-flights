@@ -25,6 +25,7 @@ export default function App() {
   const [searchSignature, setSearchSignature] = useState('');
   const [selected, setSelected] = useState<SelectedTrip | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const abort = new AbortController();
     loadRoutes(abort.signal)
@@ -133,6 +134,8 @@ export default function App() {
   return (
     <div className="app-shell globe-app">
       <FlightGlobe
+        panelRef={panelRef}
+        panelCollapsed={collapsed}
         dots={dots}
         airports={geometry.airports}
         arcs={geometry.arcs}
@@ -146,7 +149,7 @@ export default function App() {
         retryMessage={Object.values(retries)[0]?.message}
         dataError={graphError}
       />
-      <div className={`floating-panel${collapsed ? ' panel-collapsed' : ''}`}>
+      <div ref={panelRef} className={`floating-panel${collapsed ? ' panel-collapsed' : ''}`}>
         <a className="skip-link" href="#main-content">
           Skip to flight search
         </a>

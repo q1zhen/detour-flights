@@ -32,7 +32,7 @@
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
 }
 .panel-header {
   display: flex;
@@ -422,9 +422,6 @@
   margin-top: 4px;
 }
 @media (max-width: 1100px) and (min-width: 850px) {
-  .floating-panel {
-    width: calc(50vw - 18px);
-  }
   .floating-panel .route-grid.one-way {
     grid-template-columns: 1fr 24px 1fr;
   }
@@ -565,4 +562,15 @@
 }
 .project-link:hover {
   text-decoration: underline;
+}
+
+@media (min-width: 1200px) {
+  .floating-panel:not(.panel-collapsed) {
+    width: calc(46vw - 18px);
+  }
+}
+@media (min-width: 1800px) {
+  .floating-panel:not(.panel-collapsed) {
+    width: calc(38vw - 18px);
+  }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import type { GlobeInstance } from 'globe.gl';
 import { routeView } from '../lib/globe';
 import type { AirportDot, RouteArc } from '../lib/globe';
@@ -27,6 +28,8 @@ export default function FlightGlobe({
   searchFailed = false,
   retryCount = 0,
   retryMessage,
+  panelRef,
+  panelCollapsed = false,
 }: {
   dots: AirportDot[];
   airports: AirportDot[];
@@ -40,6 +43,8 @@ export default function FlightGlobe({
   searchFailed?: boolean;
   retryCount?: number;
   retryMessage?: string;
+  panelRef?: RefObject<HTMLDivElement | null>;
+  panelCollapsed?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const globe = useRef<GlobeInstance | null>(null);
@@ -51,7 +56,6 @@ export default function FlightGlobe({
   const inspect = [...dots, ...airports].find((a) => a.code === inspected);
   useEffect(() => {
     let disposed = false;
-    let resize: ResizeObserver | undefined;
     const abort = new AbortController();
     import('globe.gl')
       .then(({ default: Globe }) => {
@@ -120,13 +124,6 @@ export default function FlightGlobe({
         controls.minDistance = 125;
         controls.maxDistance = 650;
         g.renderer().setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        resize = new ResizeObserver(([entry]) => {
-          const { width, height } = entry.contentRect;
-          g.width(width)
-            .height(height)
-            .globeOffset(width >= 850 ? [Math.min(340, width * 0.23), 15] : [0, height * 0.22]);
-        });
-        resize.observe(host.current);
         g.pointOfView(routeView(latest.current.airports));
         setReady(true);
         fetch(`${import.meta.env.BASE_URL}data/land.geojson`, { signal: abort.signal })
@@ -147,11 +144,28 @@ export default function FlightGlobe({
     return () => {
       disposed = true;
       abort.abort();
-      resize?.disconnect();
       globe.current?._destructor();
       globe.current = null;
     };
   }, []);
+  useEffect(() => {
+    const g = globe.current;
+    const container = host.current;
+    if (!ready || !g || !container) return;
+    const updateLayout = () => {
+      const { width, height } = container.getBoundingClientRect();
+      const panel = panelRef?.current?.getBoundingClientRect();
+      // Centre the remaining horizontal interval [panel.right, viewport.width].
+      // A minimized or full-width mobile panel leaves the globe screen-centred.
+      const offsetX = !panelCollapsed && panel && panel.width < width * 0.75 ? panel.right / 2 : 0;
+      g.width(width).height(height).globeOffset([offsetX, 0]);
+    };
+    updateLayout();
+    const resize = new ResizeObserver(updateLayout);
+    resize.observe(container);
+    if (panelRef?.current) resize.observe(panelRef.current);
+    return () => resize.disconnect();
+  }, [ready, panelRef, panelCollapsed]);
   useEffect(() => {
     if (!ready || !globe.current) return;
     const routeCodes = new Set(airports.map((a) => a.code));

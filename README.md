@@ -182,7 +182,10 @@ midpoint is still searched, and that failures/cancellation preserve earlier matc
 [globe.gl](https://github.com/vasturiano/globe.gl) renders the full-screen interactive
 map. The compact search/results panel floats at the top left and scrolls independently;
 Minimize leaves the map available for rotation and zoom. The panel can grow to the
-full viewport height (minus its outer margins) and half the desktop width. On
+full viewport height (minus its outer margins). Desktop width scales from 50vw
+below 1,200px to 46vw at 1,200px and 38vw at 1,800px, minus the left margin. The
+globe centres in the remaining horizontal space using the panel’s measured bounds,
+and returns to the screen centre when minimized. On
 small screens it uses the available width and can be minimized to explore the map.
 Regular and self-transfer results retain separate columns on desktop.
 
