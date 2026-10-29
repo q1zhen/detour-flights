@@ -59,9 +59,15 @@ export async function searchFlights(
   }
   if (
     !Array.isArray(data.flights) ||
+    data.flights.some((flight: Partial<SearchResponse['flights'][number]> | null) =>
+      !flight || !Array.isArray(flight.segments) || !Array.isArray(flight.layovers) ||
+      typeof flight.totalDurationMinutes !== 'number'
+    ) ||
     !data.metadata ||
     !Array.isArray(data.metadata.airlines) ||
-    !Array.isArray(data.metadata.alliances)
+    !Array.isArray(data.metadata.alliances) ||
+    !Array.isArray(data.metadata.locations) ||
+    !Array.isArray(data.metadata.baggageLinks)
   )
     throw new SearchError('The flight service returned an unexpected response. Please try again.');
   return data;

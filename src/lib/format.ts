@@ -1,4 +1,4 @@
-import type { Flight, FlightTime, Segment } from './types';
+import type { CalendarDate, Flight, FlightTime } from './types';
 
 export function formatPrice(price: number, currency: string) {
   if (!Number.isFinite(price) || price <= 0) return 'Price unavailable';
@@ -11,7 +11,7 @@ export function formatPrice(price: number, currency: string) {
   }
 }
 export function formatTime(value?: FlightTime) {
-  const [hour, minute] = value?.time ?? [];
+  const { hour = -1, minute = -1 } = value?.time ?? {};
   if (
     !Number.isInteger(hour) ||
     !Number.isInteger(minute) ||
@@ -23,10 +23,10 @@ export function formatTime(value?: FlightTime) {
     return '—';
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
-export function formatDate(value?: number[]) {
-  if (!value || value.length !== 3 || value.some((v) => !Number.isInteger(v) || v <= 0))
+export function formatDate(value?: CalendarDate) {
+  if (!value || [value.year, value.month, value.day].some((v) => !Number.isInteger(v) || v <= 0))
     return 'Date unavailable';
-  const [year, month, day] = value;
+  const { year, month, day } = value;
   const date = new Date(Date.UTC(year, month - 1, day));
   if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return 'Date unavailable';
   return date.toLocaleDateString('en-US', {
@@ -37,7 +37,8 @@ export function formatDate(value?: number[]) {
   });
 }
 export function formatSearchDate(date: string) {
-  return formatDate(date.split('-').map(Number));
+  const [year, month, day] = date.split('-').map(Number);
+  return formatDate({ year, month, day });
 }
 export function arrivalDayOffset(departure?: FlightTime, arrival?: FlightTime) {
   if (
@@ -45,8 +46,8 @@ export function arrivalDayOffset(departure?: FlightTime, arrival?: FlightTime) {
     formatDate(arrival?.date) === 'Date unavailable'
   )
     return null;
-  const [dy, dm, dd] = departure!.date;
-  const [ay, am, ad] = arrival!.date;
+  const { year: dy, month: dm, day: dd } = departure!.date;
+  const { year: ay, month: am, day: ad } = arrival!.date;
   const days = Math.round((Date.UTC(ay, am - 1, ad) - Date.UTC(dy, dm - 1, dd)) / 86_400_000);
   return days === 0 ? null : `${days > 0 ? '+' : ''}${days}d`;
 }
@@ -54,14 +55,19 @@ export function formatDuration(minutes: number) {
   if (!Number.isFinite(minutes) || minutes <= 0) return 'Duration unavailable';
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
+// The provider's total includes all flight segments and layovers.
 export function flightMinutes(flight: Flight) {
-  return segmentMinutes(flight.flights);
-}
-export function segmentMinutes(segments: Segment[]) {
-  return segments?.length &&
-    segments.every((segment) => Number.isFinite(segment.duration) && segment.duration > 0)
-    ? segments.reduce((sum, segment) => sum + segment.duration, 0)
+  return Number.isFinite(flight.totalDurationMinutes) && flight.totalDurationMinutes > 0
+    ? flight.totalDurationMinutes
     : Infinity;
+}
+export function carrierUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 export function bookingUrl(value: string | null) {
   if (!value) return null;

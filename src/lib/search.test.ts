@@ -11,23 +11,18 @@ describe('flight search contract', () => {
   it('normalizes airport codes, fixes locale defaults, and creates one departure leg', () => {
     const values = { ...valid(), currency: 'eur', language: ' fr ' };
     const request = buildRequest(values);
-    expect(request.flights).toEqual([
-      { date: '2027-01-20', from_airport: 'JFK', to_airport: 'LAX' },
-    ]);
+    expect(request.flights).toEqual([{ date: '2027-01-20', fromAirport: 'JFK', toAirport: 'LAX' }]);
     expect(request.currency).toBe('USD');
     expect(request.language).toBe('en-US');
-    expect(request.max_stops).toBeNull();
+    expect(request).not.toHaveProperty('maxStops');
+    expect(request.region).toBe('US');
+    expect(request).not.toHaveProperty('filters');
   });
-  it('distinguishes inherited, unrestricted, and zero-stop overrides', () => {
-    const request = buildRequest({
-      ...valid(),
-      stops: '1',
-      outboundStops: '0',
-    });
-    expect(request.max_stops).toBe(1);
-    expect(request.flights[0].max_stops).toBe(0);
-    expect(buildRequest({ ...valid(), outboundStops: 'any' }).flights[0].max_stops).toBeNull();
-    expect(buildRequest(valid()).flights[0]).not.toHaveProperty('max_stops');
+  it('omits unrestricted stops and preserves zero for nonstop', () => {
+    expect(buildRequest({ ...valid(), stops: '1' }).maxStops).toBe(1);
+    expect(buildRequest({ ...valid(), stops: '0' }).maxStops).toBe(0);
+    expect(buildRequest(valid())).not.toHaveProperty('maxStops');
+    expect(JSON.stringify(buildRequest(valid()))).not.toContain('null');
   });
   it('always sends one way even if stale round-trip settings are supplied', () => {
     const values = {
@@ -45,7 +40,7 @@ describe('flight search contract', () => {
     const values = {
       ...valid(),
       seat: 'first' as const,
-      passengers: { adults: 2, children: 1, infants_in_seat: 1, infants_on_lap: 2 },
+      passengers: { adults: 2, children: 1, infantsInSeat: 1, infantsOnLap: 2 },
       outboundAirlines: 'aa, b6',
     };
     expect(validateSearch(values)).toEqual([]);
@@ -67,25 +62,25 @@ describe('flight search contract', () => {
     expect(
       validateSearch({
         ...valid(),
-        passengers: { adults: 0, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
+        passengers: { adults: 0, children: 0, infantsInSeat: 0, infantsOnLap: 0 },
       }),
     ).toHaveLength(1);
     expect(
       validateSearch({
         ...valid(),
-        passengers: { adults: 9, children: 1, infants_in_seat: 0, infants_on_lap: 0 },
+        passengers: { adults: 9, children: 1, infantsInSeat: 0, infantsOnLap: 0 },
       }),
     ).toHaveLength(1);
     expect(
       validateSearch({
         ...valid(),
-        passengers: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 2 },
+        passengers: { adults: 1, children: 0, infantsInSeat: 0, infantsOnLap: 2 },
       }),
     ).toHaveLength(1);
     expect(
       validateSearch({
         ...valid(),
-        passengers: { adults: 0, children: 1, infants_in_seat: 0, infants_on_lap: 0 },
+        passengers: { adults: 0, children: 1, infantsInSeat: 0, infantsOnLap: 0 },
       }),
     ).toEqual([]);
   });

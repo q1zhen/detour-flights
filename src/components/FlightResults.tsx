@@ -46,9 +46,9 @@ export function FlightResults({
         <div>
           <div className="result-title-row">
             <h2>
-              {request.flights[0].from_airport}
+              {request.flights[0].fromAirport}
               <span className="heading-arrow">→</span>
-              {request.flights[0].to_airport}
+              {request.flights[0].toAirport}
             </h2>
           </div>
           <p className="muted">
@@ -63,7 +63,7 @@ export function FlightResults({
           options={[
             { value: 'recommended', label: 'Provider order' },
             { value: 'price', label: 'Lowest price' },
-            { value: 'duration', label: 'Shortest flight time' },
+            { value: 'duration', label: 'Shortest journey' },
           ]}
         />
       </div>
@@ -76,7 +76,7 @@ export function FlightResults({
         <div className="flight-list">
           {flights.map((flight, index) => (
             <FlightCard
-              key={`${flight.google_flights_url || JSON.stringify(flight)}-${index}`}
+              key={`${flight.googleFlightsUrl || JSON.stringify(flight)}-${index}`}
               flight={flight}
               currency={request.currency}
               cheapest={flight.price === cheapest}

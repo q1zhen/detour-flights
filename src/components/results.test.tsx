@@ -9,15 +9,18 @@ import { FlightResults } from './FlightResults';
 import { SearchForm } from './SearchForm';
 import { buildRequest, initialValues } from '../lib/search';
 import type { Flight } from '../lib/types';
-import { oneWayFlight } from '../test/fixtures';
+import { emptyMetadata, oneWayFlight } from '../test/fixtures';
 
 const emptyFlight: Flight = {
+  ...oneWayFlight,
   type: '',
   price: 0,
-  google_flights_url: null,
+  googleFlightsUrl: null,
   airlines: [],
-  flights: [],
-  carbon: { emission: 0, typical_on_route: 0 },
+  segments: [],
+  totalDurationMinutes: 0,
+  layovers: [],
+  carbon: { emission: 0, typicalOnRoute: 0 },
 };
 describe('result rendering edge cases', () => {
   it('renders missing upstream data without implying a free flight or a booking link', () => {
@@ -35,6 +38,7 @@ describe('result rendering edge cases', () => {
         data={{
           flights: [],
           metadata: {
+            ...emptyMetadata,
             airlines: [{ code: 'AA', name: 'American' }],
             alliances: [{ code: 'OW', name: 'Oneworld' }],
           },
@@ -53,7 +57,7 @@ describe('result rendering edge cases', () => {
         flight={{
           ...emptyFlight,
           airlines: ['<script>alert(1)</script>'],
-          google_flights_url: 'https://www.google.com/travel/flights/search?tfs=test',
+          googleFlightsUrl: 'https://www.google.com/travel/flights/search?tfs=test',
         }}
         currency="EUR"
         cheapest={false}
@@ -71,7 +75,7 @@ it('renders connecting one-way flights without return details', () => {
     <FlightCard flight={oneWayFlight} currency="USD" cheapest={false} />,
   );
   expect(html).toContain('1 stop');
-  expect(html).toContain('6h 0m');
+  expect(html).toContain('8h 0m');
   expect(html).toContain('2h 0m');
   expect(html).toContain('layover');
   expect(html).toContain('timeline-start');

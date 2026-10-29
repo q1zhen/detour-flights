@@ -18,13 +18,13 @@ export function SegmentDetails({
           <span>{formatDate(segment.departure?.date)}</span>
         </span>
         <span className="timeline-airport">
-          <strong>{segment.from_airport?.code || '—'}</strong>
-          <span>{segment.from_airport?.name || 'Airport unavailable'}</span>
+          <strong>{segment.fromAirport?.code || '—'}</strong>
+          <span>{segment.fromAirport?.name || 'Airport unavailable'}</span>
         </span>
       </li>
       <li className="timeline-flight">
-        <span>{formatDuration(segment.duration)} flight</span>
-        {segment.plane_type && <span>{segment.plane_type}</span>}
+        <span>{formatDuration(segment.durationMinutes)} flight</span>
+        {segment.planeType && <span>{segment.planeType}</span>}
       </li>
       <li className={`timeline-point ${last ? 'timeline-end' : ''}`}>
         <span className="timeline-time">
@@ -32,8 +32,8 @@ export function SegmentDetails({
           <span>{formatDate(segment.arrival?.date)}</span>
         </span>
         <span className="timeline-airport">
-          <strong>{segment.to_airport?.code || '—'}</strong>
-          <span>{segment.to_airport?.name || 'Airport unavailable'}</span>
+          <strong>{segment.toAirport?.code || '—'}</strong>
+          <span>{segment.toAirport?.name || 'Airport unavailable'}</span>
         </span>
       </li>
     </>

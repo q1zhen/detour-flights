@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SearchError, searchFlights } from './api';
 import { buildRequest, initialValues } from './search';
-import { oneWayFlight } from '../test/fixtures';
+import { emptyMetadata, oneWayFlight } from '../test/fixtures';
 
 const request = buildRequest({ ...initialValues(), from: 'JFK', to: 'LAX' });
-const empty = { flights: [], metadata: { airlines: [], alliances: [] } };
+const empty = { flights: [], metadata: emptyMetadata };
 afterEach(() => vi.unstubAllGlobals());
 describe('API requests and failure handling', () => {
   it('posts JSON without credentials and keeps metadata on empty results', async () => {
     const payload = {
       ...empty,
-      metadata: { airlines: [{ code: 'AA', name: 'American' }], alliances: [] },
+      metadata: { ...emptyMetadata, airlines: [{ code: 'AA', name: 'American' }], alliances: [] },
     };
     const mock = vi.fn().mockResolvedValue(Response.json(payload));
     vi.stubGlobal('fetch', mock);
@@ -83,6 +83,6 @@ it('preserves one-way segments, exact fares, and booking URLs', async () => {
   );
   const response = await searchFlights(request);
   expect(response.flights[0]).toEqual(oneWayFlight);
-  expect(response.flights[0].flights).toHaveLength(2);
+  expect(response.flights[0].segments).toHaveLength(2);
   expect(response.flights[0].price).toBe(553);
 });

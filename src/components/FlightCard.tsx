@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Badge, Button, Tooltip } from '@radix-ui/themes';
+import { Badge, Button } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import type { Flight } from '../lib/types';
 import {
@@ -22,9 +22,9 @@ export function FlightCard({
   currency: string;
   cheapest: boolean;
 }) {
-  const segments = flight.flights ?? [];
-  const carbon = carbonComparison(flight.carbon?.emission, flight.carbon?.typical_on_route);
-  const url = bookingUrl(flight.google_flights_url);
+  const segments = flight.segments ?? [];
+  const carbon = carbonComparison(flight.carbon?.emission, flight.carbon?.typicalOnRoute);
+  const url = bookingUrl(flight.googleFlightsUrl);
   const airlines = flight.airlines?.filter(Boolean).join(' + ') || 'Airline unavailable';
   return (
     <article
@@ -36,11 +36,9 @@ export function FlightCard({
           <span className="sr-only">Flight details: </span>
           <FlightDirection segments={segments} />
           <span className="flight-meta">
-            <Tooltip content="Flight time excludes layovers">
-              <strong>
-                {formatDuration(flightMinutes(flight))} <small>in air</small>
-              </strong>
-            </Tooltip>
+            <strong>
+              {formatDuration(flightMinutes(flight))} <small>total</small>
+            </strong>
             <span>{airlines}</span>
           </span>
           <span className="flight-carbon">
@@ -90,7 +88,13 @@ export function FlightCard({
             <ol className="itinerary-timeline" aria-label="Flight itinerary">
               {segments.map((segment, index) => (
                 <Fragment key={index}>
-                  {index > 0 && <LayoverDetails previous={segments[index - 1]} next={segment} />}
+                  {index > 0 && (
+                    <LayoverDetails
+                      layover={flight.layovers?.[index - 1]}
+                      previous={segments[index - 1]}
+                      next={segment}
+                    />
+                  )}
                   <SegmentDetails
                     segment={segment}
                     first={index === 0}
@@ -103,14 +107,14 @@ export function FlightCard({
             <p className="muted">Segment details unavailable</p>
           )}
           <div className="details-footnote">
-            <span>Local times · Layovers are local-clock estimates</span>
+            <span>Local airport times</span>
             <span>
               CO₂:{' '}
               {flight.carbon?.emission > 0
                 ? `${(flight.carbon.emission / 1000).toLocaleString()} kg`
                 : 'unavailable'}
-              {flight.carbon?.typical_on_route > 0 &&
-                ` · typical ${(flight.carbon.typical_on_route / 1000).toLocaleString()} kg`}
+              {flight.carbon?.typicalOnRoute > 0 &&
+                ` · typical ${(flight.carbon.typicalOnRoute / 1000).toLocaleString()} kg`}
             </span>
           </div>
         </div>

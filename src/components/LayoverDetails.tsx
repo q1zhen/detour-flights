@@ -1,26 +1,33 @@
-import type { Segment } from '../lib/types';
+import type { Layover, Segment } from '../lib/types';
 import { formatDuration } from '../lib/format';
-import { layoverMinutes } from '../lib/layover';
 
-export function LayoverDetails({ previous, next }: { previous: Segment; next: Segment }) {
-  const airport = previous.to_airport?.code;
-  const nextAirport = next.from_airport?.code;
-  const sameAirport = Boolean(
-    airport && nextAirport && airport.toUpperCase() === nextAirport.toUpperCase(),
-  );
-  const minutes = layoverMinutes(previous, next);
+export function LayoverDetails({
+  layover,
+  previous,
+  next,
+}: {
+  layover?: Layover;
+  previous: Segment;
+  next: Segment;
+}) {
+  const airport = layover?.airportCode || previous.toAirport?.code;
+  const nextAirport = next.fromAirport?.code;
+  const transfer = layover?.changeOfAirport || (airport && nextAirport && airport !== nextAirport);
+  const minutes = layover?.durationMinutes;
   return (
     <li className="timeline-layover">
       <div className="layover-label">
         <strong>
-          {minutes === null
-            ? 'Duration unavailable'
-            : minutes === 0
-              ? '0m'
-              : formatDuration(minutes)}{' '}
-          {sameAirport ? 'layover' : 'transfer'}
+          {typeof minutes === 'number' && minutes > 0
+            ? formatDuration(minutes)
+            : 'Duration unavailable'}{' '}
+          {transfer ? 'transfer' : 'layover'}
         </strong>
-        <span>{sameAirport ? airport : `${airport || '—'} → ${nextAirport || '—'}`}</span>
+        <span>
+          {transfer
+            ? `${airport || '—'} → ${nextAirport || '—'} · Change airports`
+            : airport || 'Airport unavailable'}
+        </span>
       </div>
     </li>
   );

@@ -1,11 +1,11 @@
 export type Cabin = 'economy' | 'premium-economy' | 'business' | 'first';
 export type StopChoice = 'any' | '0' | '1' | '2' | '3';
-export type LegStopChoice = StopChoice | 'inherit';
+export type TimeRange = [number, number];
 export interface Passengers {
   adults: number;
   children: number;
-  infants_in_seat: number;
-  infants_on_lap: number;
+  infantsInSeat: number;
+  infantsOnLap: number;
 }
 export interface SearchValues {
   seat: Cabin;
@@ -14,14 +14,19 @@ export interface SearchValues {
   departure: string;
   passengers: Passengers;
   stops: StopChoice;
-  outboundStops: LegStopChoice;
   outboundAirlines: string;
+  departureTime: TimeRange;
+  arrivalTime: TimeRange;
+  minLayover: string;
+  maxLayover: string;
+  allowConnections: string;
+  blockConnections: string;
 }
 export interface SearchLeg {
   date: string;
-  from_airport: string;
-  to_airport: string;
-  max_stops?: number | null;
+  fromAirport: string;
+  toAirport: string;
+  maxStops?: number;
   airlines?: string[];
 }
 export interface SearchRequest {
@@ -31,27 +36,62 @@ export interface SearchRequest {
   passengers: Passengers;
   currency: string;
   language: string;
-  max_stops: number | null;
+  region: string;
+  maxStops?: number;
+  filters?: {
+    departureTime?: { earliest?: string; latest?: string };
+    arrivalTime?: { earliest?: string; latest?: string };
+    layover?: { minMinutes?: number; maxMinutes?: number };
+    connectionAirports?: { allow?: string[]; block?: string[] };
+  };
+}
+export interface CalendarDate {
+  year: number;
+  month: number;
+  day: number;
 }
 export interface FlightTime {
-  date: number[];
-  time: number[];
+  date: CalendarDate;
+  time: { hour: number; minute: number };
 }
 export interface Segment {
-  from_airport: { code: string; name: string };
-  to_airport: { code: string; name: string };
+  fromAirport: { code: string; name: string };
+  toAirport: { code: string; name: string };
   departure: FlightTime;
   arrival: FlightTime;
-  duration: number;
-  plane_type: string;
+  durationMinutes: number;
+  planeType: string;
+  operatingCarrier: string;
+  flightNumber: string;
+  legroom: string;
+}
+export interface Layover {
+  durationMinutes: number;
+  airportCode: string;
+  airportName: string;
+  cityName: string;
+  changeOfAirport: boolean;
+}
+export interface CarrierLink {
+  code: string;
+  name: string;
+  url: string;
+  type?: 'support' | 'baggage';
 }
 export interface Flight {
   type: string;
   price: number;
-  google_flights_url: string | null;
+  googleFlightsUrl: string | null;
   airlines: string[];
-  flights: Segment[];
-  carbon: { emission: number; typical_on_route: number };
+  segments: Segment[];
+  totalDurationMinutes: number;
+  stopCount: number;
+  layovers: Layover[];
+  carbon: { emission: number; typicalOnRoute: number };
+  farePolicy: { refundabilityCode: number | null; checkedBaggageIncluded: boolean | null };
+  bookingToken: string;
+  carrierLinks: CarrierLink[];
+  baggageLinks: CarrierLink[];
 }
 export interface CodeName {
   code: string;
@@ -59,5 +99,24 @@ export interface CodeName {
 }
 export interface SearchResponse {
   flights: Flight[];
-  metadata: { airlines: CodeName[]; alliances: CodeName[] };
+  metadata: {
+    airlines: CodeName[];
+    alliances: CodeName[];
+    baggageLinks: CarrierLink[];
+    locations: {
+      code: string;
+      kind: 'airport' | 'city' | 'place';
+      name: string;
+      cityName: string;
+      cityCode: string;
+      countryCode: string;
+      countryName: string;
+    }[];
+    flexibleDateInsight: {
+      destinationLabel: string;
+      cheapestPrice: number | null;
+      highestPrice: number | null;
+      pricePoints: { epochMs: number; date: CalendarDate; price: number }[];
+    } | null;
+  };
 }

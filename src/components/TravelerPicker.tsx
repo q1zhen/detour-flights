@@ -5,8 +5,8 @@ import type { Passengers } from '../lib/types';
 const groups: { key: keyof Passengers; label: string; note: string }[] = [
   { key: 'adults', label: 'Adults', note: 'Age 12 and above' },
   { key: 'children', label: 'Children', note: 'Age 2–11' },
-  { key: 'infants_in_seat', label: 'Infants in a seat', note: 'Under age 2' },
-  { key: 'infants_on_lap', label: 'Infants on a lap', note: 'One per adult' },
+  { key: 'infantsInSeat', label: 'Infants in a seat', note: 'Under age 2' },
+  { key: 'infantsOnLap', label: 'Infants on a lap', note: 'One per adult' },
 ];
 export function TravelerPicker({
   value,
@@ -71,7 +71,7 @@ export function TravelerPicker({
         <Text
           as="p"
           size="1"
-          color={total < 1 || value.infants_on_lap > value.adults ? 'red' : 'gray'}
+          color={total < 1 || value.infantsOnLap > value.adults ? 'red' : 'gray'}
         >
           Max 9 travelers · One lap infant per adult.
         </Text>

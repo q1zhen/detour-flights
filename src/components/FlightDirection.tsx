@@ -10,7 +10,7 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
     <span className="flight-route">
       <span className="route-endpoint">
         <strong>{formatTime(first?.departure)}</strong>
-        <span>{first?.from_airport?.code || '—'}</span>
+        <span>{first?.fromAirport?.code || '—'}</span>
       </span>
       <span className="route-track">
         <span className="stop-label">
@@ -25,7 +25,7 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
           {connections.map((segment, index) => (
             <span className="connection-marker" key={index}>
               <i />
-              <span>{segment.to_airport?.code || '—'}</span>
+              <span>{segment.toAirport?.code || '—'}</span>
             </span>
           ))}
           <i className="endpoint-dot" />
@@ -33,7 +33,7 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
         {connections.length > 0 && (
           <span className="sr-only">
             via{' '}
-            {connections.map((segment) => segment.to_airport?.code || 'unknown airport').join(', ')}
+            {connections.map((segment) => segment.toAirport?.code || 'unknown airport').join(', ')}
           </span>
         )}
       </span>
@@ -42,7 +42,7 @@ export function FlightDirection({ segments }: { segments: Segment[] }) {
           {formatTime(last?.arrival)}
           {offset && <sup aria-label={`Arrival date offset ${offset}`}>{offset}</sup>}
         </strong>
-        <span>{last?.to_airport?.code || '—'}</span>
+        <span>{last?.toAirport?.code || '—'}</span>
       </span>
     </span>
   );

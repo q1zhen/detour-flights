@@ -34,7 +34,6 @@ export function SearchOptions({
             value={values.stops}
             onChange={(v) => {
               update('stops', v);
-              update('outboundStops', 'inherit');
             }}
             options={stopOptions}
           />
