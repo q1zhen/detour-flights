@@ -9,10 +9,14 @@ export function SelfTransferCard({
   result,
   currency,
   baselinePrice,
+  selected,
+  onSelect,
 }: {
   result: TransferResult;
   currency: string;
   baselinePrice: number | null;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const segments = [...result.leg1.segments, ...result.leg2.segments];
   const airlines = [...new Set([...(result.leg1.airlines ?? []), ...(result.leg2.airlines ?? [])])]
@@ -20,11 +24,22 @@ export function SelfTransferCard({
     .join(' + ');
   return (
     <article
-      className="flight-card transfer-card"
+      className={`flight-card transfer-card${selected ? ' selected-trip' : ''}`}
+      data-selected={selected || undefined}
       aria-label={`Via ${result.midpoint}, ${formatPrice(result.price, currency)}`}
     >
-      <details className="flight-details">
-        <summary className="flight-row">
+      <details className="flight-details" open={onSelect ? selected : undefined}>
+        <summary
+          className="flight-row"
+          onClick={
+            onSelect
+              ? (event) => {
+                  event.preventDefault();
+                  onSelect();
+                }
+              : undefined
+          }
+        >
           <span className="sr-only">Self-transfer via {result.midpoint}: </span>
           <FlightDirection
             segments={segments}

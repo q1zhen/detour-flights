@@ -716,3 +716,23 @@ it('defaults to a 2–12 hour transfer window and rejects longer waits', () => {
     ).map((r) => r.transferMinutes),
   ).toEqual([120, 720]);
 });
+
+it('marks compatible pairs above the regular fare ceiling as too expensive, not empty', async () => {
+  const result = await run(
+    async (req) => {
+      const leg = req.flights[0];
+      if (leg.date !== '2027-01-20') return response([]);
+      return response([
+        leg.fromAirport === 'AAA'
+          ? flight('AAA', 'HAA', 250, '2027-01-20T08:00', '2027-01-20T10:00')
+          : flight('HAA', 'BBB', 100, '2027-01-20T12:00', '2027-01-20T18:00'),
+      ]);
+    },
+    {
+      graph: graph([['HAA', 1]]),
+      baseline: [flight('AAA', 'BBB', 200), flight('AAA', 'BBB', 300)],
+    },
+  );
+  expect(result.results).toEqual([]);
+  expect(result.midpoints[0]).toMatchObject({ status: 'pruned', overBudget: true, resultCount: 0 });
+});

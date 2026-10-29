@@ -44,14 +44,15 @@ Round trips remain disabled and multi-city is unsupported. No booking occurs in 
 ## Self-transfer search
 
 Regular results appear first. A separate column then fills with two-ticket options,
-ranked by combined price and then elapsed journey duration. A midpoint sidebar
-shows queued, long-leg pricing, priced, matching, with-results, no-results,
-price-pruned, failed, and cancelled states in compact rows, with a completed-midpoint
-progress bar. Cancelled work does not count toward completion. Cancel keeps completed results and
+ranked by combined price and then elapsed journey duration. The full-screen globe shows candidate airports as status dots: grey for pending,
+red for no results, yellow for price cutoffs, and green as soon as a valid result
+arrives. Failed and cancelled searches stay grey unless they already found a
+result. Inspect a dot (or use the keyboard-accessible airport picker) for its status.
+The globe legend includes a completed-midpoint progress bar. Cancelled work does not count toward completion. Cancel keeps completed results and
 aborts pending work; starting another search clears the previous run.
 
 The form adds a separate self-transfer window (default 2–12 hours; configurable
-from 0 to 168 hours at minute precision). The shorter leg **must be nonstop**:
+from 0 to 168 hours using discrete slider ticks). The shorter leg **must be nonstop**:
 both API stop-limit fields are forced to zero and responses are checked for
 exactly one segment with zero stops. The selected stop limit applies to the
 longer ticket and to regular flights. Airline and class controls are always visible.
@@ -170,3 +171,34 @@ concurrency, and deterministic dataset regeneration.
 Streaming regression tests deliberately hold one midpoint or departure date pending
 to verify that matching results are emitted before it resolves, that a later cheaper
 midpoint is still searched, and that failures/cancellation preserve earlier matches.
+
+## Globe workspace
+
+[globe.gl](https://github.com/vasturiano/globe.gl) renders the full-screen interactive
+map. The compact search/results panel floats at the top left and scrolls independently;
+Minimize leaves the map available for rotation and zoom. On small screens it occupies
+at most the top 55% of the viewport. Regular and self-transfer results retain separate
+columns on desktop.
+
+The prepared airport graph loads immediately. Origin/destination, geographic sliders,
+and connection allow/block filters recompute candidate dots locally before any fare
+requests. Editing a search returns the dots to preview grey so previous search statuses
+are not mistaken for new availability. A new search clears the selected trip.
+
+Opening a regular or self-transfer card selects that one trip and closes the previous
+selection. The globe draws every actual segment, labels every known airport by IATA,
+and colours the two tickets cyan and purple. Airport changes use a yellow dashed link.
+Missing coordinates are reported without inventing locations. Nested ticket details
+remain independent of the single selected trip. Recenter restores the route view;
+date-line routes use a spherical centre. Reduced-motion settings disable route animation.
+
+Departure/arrival sliders use 15-minute ticks plus the inclusive 23:59 endpoint.
+Transfer/within-ticket layover sliders use 30-minute ticks through 24 hours, hourly ticks
+through 48 hours, then six-hour ticks through 168 hours. The within-ticket upper bound
+also offers **Any**, and Reset restores unconstrained layovers. Defaults stay 2–12 hours.
+
+The globe library is loaded separately from the search UI. Land geometry is bundled
+locally (see data/README.md); no external basemap service is required. If WebGL fails,
+search and results remain usable. Tests cover preview filtering, status colours,
+partial-result precedence, segment/airport-transfer geometry, missing coordinates,
+date-line centring, discrete durations and exclusive selection markup.

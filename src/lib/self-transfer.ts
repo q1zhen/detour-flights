@@ -43,6 +43,7 @@ export interface MidpointProgress extends MidpointCandidate {
   cheapestLong?: number;
   resultCount: number;
   message?: string;
+  overBudget?: boolean;
 }
 export interface TimedFlight {
   flight: Flight;
@@ -332,7 +333,11 @@ export async function searchSelfTransfers({
   function publish(hub: MidpointProgress, leg1: TimedFlight[], leg2: TimedFlight[]) {
     check();
     for (const result of joinFlights(leg1, leg2, options, hub.code)) {
-      if (result.price > ceiling || seenResults.has(result.id)) continue;
+      if (result.price > ceiling) {
+        hub.overBudget = true;
+        continue;
+      }
+      if (seenResults.has(result.id)) continue;
       state.results.push(result);
       seenResults.add(result.id);
       hub.resultCount++;
@@ -429,9 +434,11 @@ export async function searchSelfTransfers({
             publish(hub, leg1, leg2);
           }
         }
-        hub.status = hub.resultCount ? 'results' : 'empty';
+        hub.status = hub.resultCount ? 'results' : hub.overBudget ? 'pruned' : 'empty';
         if (!hub.resultCount)
-          hub.message = 'No matching transfers within the time window and regular fare ceiling.';
+          hub.message = hub.overBudget
+            ? 'Matching transfers exceed the regular fare ceiling.'
+            : 'No matching transfers within the time window.';
       } catch (error) {
         check();
         hub.status = 'error';

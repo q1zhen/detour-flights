@@ -1,7 +1,7 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Button, Callout, IconButton, Badge, TextField, Switch } from '@radix-ui/themes';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon, SwitchIcon } from '@radix-ui/react-icons';
-import { buildRequest, initialValues, validateSearch } from '../lib/search';
+import { airlineCodes, buildRequest, initialValues, validateSearch } from '../lib/search';
 import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
 import { TravelerPicker } from './TravelerPicker';
 import { SearchOptions } from './SearchOptions';
@@ -9,6 +9,8 @@ import { SelectField } from './SelectField';
 import { CandidateFilterSliders } from './CandidateFilterSliders';
 import { DEFAULT_CANDIDATE_FILTERS } from '../lib/routes';
 import { DEFAULT_TRANSFER_OPTIONS, validateTransferOptions } from '../lib/self-transfer';
+import type { GlobeDraft } from '../lib/globe';
+import { DurationRangeField } from './DurationRangeField';
 import type { TransferOptions } from '../lib/self-transfer';
 
 const cabins: { value: Cabin; label: string }[] = [
@@ -21,25 +23,35 @@ export function SearchForm({
   onSearch,
   loading,
   onCancel,
+  onPreviewChange,
 }: {
   onSearch: (request: SearchRequest, options: TransferOptions) => void;
   loading: boolean;
   onCancel: () => void;
+  onPreviewChange?: (draft: GlobeDraft) => void;
 }) {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<string[]>([]);
   const preferenceId = useId();
-  const [minTransfer, setMinTransfer] = useState(
-    String(DEFAULT_TRANSFER_OPTIONS.minBufferMinutes / 60),
-  );
-  const [maxTransfer, setMaxTransfer] = useState(
-    String(DEFAULT_TRANSFER_OPTIONS.maxBufferMinutes / 60),
-  );
+  const [transferWindow, setTransferWindow] = useState<[number, number]>([
+    DEFAULT_TRANSFER_OPTIONS.minBufferMinutes,
+    DEFAULT_TRANSFER_OPTIONS.maxBufferMinutes,
+  ]);
   const [preferenceScope, setPreferenceScope] =
     useState<NonNullable<TransferOptions['preferenceScope']>>('long-leg');
   const [candidateFilters, setCandidateFilters] = useState(() => ({
     ...DEFAULT_CANDIDATE_FILTERS,
   }));
+  useEffect(() => {
+    onPreviewChange?.({
+      from: values.from.trim(),
+      to: values.to.trim(),
+      filters: candidateFilters,
+      allow: airlineCodes(values.allowConnections),
+      block: airlineCodes(values.blockConnections),
+      signature: JSON.stringify({ values, candidateFilters, transferWindow, preferenceScope }),
+    });
+  }, [values, candidateFilters, transferWindow, preferenceScope, onPreviewChange]);
   function update<K extends keyof SearchValues>(key: K, value: SearchValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }));
   }
@@ -51,12 +63,12 @@ export function SearchForm({
         event.preventDefault();
         const nextErrors = validateSearch(values);
         const options = {
-          minBufferMinutes: Number(minTransfer) * 60,
-          maxBufferMinutes: Number(maxTransfer) * 60,
+          minBufferMinutes: transferWindow[0],
+          maxBufferMinutes: transferWindow[1],
           candidateFilters: { ...candidateFilters },
           preferenceScope,
         };
-        if (!minTransfer.trim() || !maxTransfer.trim() || !validateTransferOptions(options))
+        if (!validateTransferOptions(options))
           nextErrors.push(
             'Choose an ordered self-transfer window between 0 and 168 hours, in whole minutes.',
           );
@@ -173,32 +185,13 @@ export function SearchForm({
         </div>
         <SearchOptions values={values} update={update} disabled={loading} />
         <div className="transfer-options">
-          <div>
-            <strong>Self-transfer window</strong>
-            <span className="column-tag">Short leg: nonstop</span>
-          </div>
-          <label className="field">
-            <span>Minimum hours</span>
-            <TextField.Root
-              type="number"
-              min="0"
-              max="168"
-              step="0.5"
-              value={minTransfer}
-              onChange={(event) => setMinTransfer(event.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>Maximum hours</span>
-            <TextField.Root
-              type="number"
-              min="0"
-              max="168"
-              step="0.5"
-              value={maxTransfer}
-              onChange={(event) => setMaxTransfer(event.target.value)}
-            />
-          </label>
+          <DurationRangeField
+            label="Self-transfer window"
+            value={transferWindow}
+            disabled={loading}
+            onChange={([min, max]) => setTransferWindow([min ?? 0, max ?? 10080])}
+          />
+          <span className="column-tag">Short leg: nonstop</span>
         </div>
         <CandidateFilterSliders
           value={candidateFilters}

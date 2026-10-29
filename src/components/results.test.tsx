@@ -139,15 +139,17 @@ it('renders accessible two-handle time bars and disables them during searches', 
   const html = renderToStaticMarkup(
     <SearchForm onSearch={() => {}} loading={true} onCancel={() => {}} />,
   );
-  expect(html.match(/role="slider"/g)).toHaveLength(7);
+  expect(html.match(/role="slider"/g)).toHaveLength(11);
   expect(html).toContain('aria-label="Departure time earliest"');
   expect(html).toContain('aria-label="Arrival time latest"');
   expect(html).toContain('aria-valuetext="00:00"');
   expect(html).toContain('aria-valuetext="23:59"');
-  expect(html.match(/aria-disabled="true"/g)).toHaveLength(5);
+  expect(html.match(/aria-disabled="true"/g)).toHaveLength(7);
 });
 
-import { MidpointSidebar, SelfTransferResults } from './SelfTransferResults';
+import { SelfTransferResults } from './SelfTransferResults';
+import FlightGlobe from './FlightGlobe';
+const globeProps = { dots: [], airports: [], arcs: [], focusKey: '', dataError: null, missing: [] };
 import type { TransferProgress } from '../lib/self-transfer';
 const transferProgress: TransferProgress = {
   phase: 'joining',
@@ -191,11 +193,11 @@ const transferProgress: TransferProgress = {
 it('renders live midpoint statuses and independently bookable self-transfer tickets', () => {
   const html = renderToStaticMarkup(
     <>
-      <MidpointSidebar progress={transferProgress} loading />
+      <FlightGlobe {...globeProps} progress={transferProgress} />
       <SelfTransferResults progress={transferProgress} loading error={null} currency="USD" />
     </>,
   );
-  expect(html).toContain('1 found');
+  expect(html).toContain('1/1');
   expect(html).toContain('Via ORD');
   expect(html).toContain('Save $333');
   expect(html).toContain('2h 0m');
@@ -293,13 +295,13 @@ it('reports completed midpoint progress and does not count cancelled work as com
     resultCount: 0,
   };
   const active = { ...transferProgress, midpoints: [...transferProgress.midpoints, second] };
-  const html = renderToStaticMarkup(<MidpointSidebar progress={active} loading />);
+  const html = renderToStaticMarkup(<FlightGlobe {...globeProps} progress={active} />);
   expect(html).toContain('<progress');
   expect(html).toContain('max="2" value="1"');
-  expect(html).toContain('aria-valuetext="1 of 2 finished"');
+  expect(html).toContain('1/2');
   const cancelled = renderToStaticMarkup(
-    <MidpointSidebar
-      loading={false}
+    <FlightGlobe
+      {...globeProps}
       progress={{
         ...active,
         phase: 'cancelled',
@@ -308,10 +310,10 @@ it('reports completed midpoint progress and does not count cancelled work as com
     />,
   );
   expect(cancelled).toContain('max="2" value="1"');
-  expect(cancelled).toContain('1 of 2 finished, cancelled');
-  const pending = renderToStaticMarkup(<MidpointSidebar progress={null} loading />);
-  expect(pending).toContain('<progress');
-  expect(pending).not.toContain('value=');
+  expect(cancelled).toContain('Cancelled');
+  const pending = renderToStaticMarkup(<FlightGlobe {...globeProps} progress={null} />);
+  expect(pending).toContain('Preview');
+  expect(pending).not.toContain('<progress');
 });
 
 it('keeps airline and class visible, defaults to long-leg scope, and uses the 2–12 hour window', () => {
@@ -325,7 +327,8 @@ it('keeps airline and class visible, defaults to long-leg scope, and uses the 2�
   expect(html).toContain('aria-checked="false"');
   expect(html).toContain('Long leg only');
   expect(html).toContain('Self-transfer scope');
-  expect(html).toContain('value="12"');
+  expect(html).toContain('aria-valuetext="12h"');
+  expect(html).not.toContain('type="number"');
   const loading = renderToStaticMarkup(
     <SearchForm onSearch={() => {}} loading onCancel={() => {}} />,
   );
@@ -349,4 +352,29 @@ it('labels the requested cabin on regular cards and each separate ticket', () =>
   expect(summary).toContain('aria-label="Ticket 2 · Cabin class: Business"');
   expect(split).toContain('aria-label="Cabin class: Economy"');
   expect(split).toContain('aria-label="Cabin class: Business"');
+});
+
+it('renders only the centrally selected trip expanded, leaving nested ticket details independent', () => {
+  const regular = renderToStaticMarkup(
+    <FlightResults
+      data={{ flights: [oneWayFlight], metadata: emptyMetadata }}
+      request={buildRequest({ ...initialValues(), from: 'JFK', to: 'LAX' })}
+      loading={false}
+      selectedId="regular:0"
+      onSelect={() => {}}
+    />,
+  );
+  expect(regular).toContain('data-selected="true"');
+  expect(regular).toContain('class="flight-details" open=""');
+  const unselected = renderToStaticMarkup(
+    <SelfTransferCard
+      result={transferProgress.results[0]}
+      currency="USD"
+      baselinePrice={553}
+      selected={false}
+      onSelect={() => {}}
+    />,
+  );
+  expect(unselected).not.toContain('data-selected="true"');
+  expect(unselected).not.toContain('open=""');
 });

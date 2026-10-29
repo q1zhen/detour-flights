@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Skeleton } from '@radix-ui/themes';
-import type { SearchRequest, SearchResponse } from '../lib/types';
+import type { Flight, SearchRequest, SearchResponse } from '../lib/types';
 import { flightMinutes, formatSearchDate } from '../lib/format';
 import { FlightCard } from './FlightCard';
 import { SelectField } from './SelectField';
@@ -10,10 +10,14 @@ export function FlightResults({
   data,
   request,
   loading,
+  selectedId,
+  onSelect,
 }: {
   data: SearchResponse | null;
   request: SearchRequest | null;
   loading: boolean;
+  selectedId?: string;
+  onSelect?: (flight: Flight, id: string) => void;
 }) {
   const [sort, setSort] = useState('recommended');
   const flights = useMemo(() => {
@@ -78,6 +82,12 @@ export function FlightResults({
           {flights.map((flight, index) => (
             <FlightCard
               key={`${flight.googleFlightsUrl || JSON.stringify(flight)}-${index}`}
+              selected={selectedId === `regular:${data.flights.indexOf(flight)}`}
+              onSelect={
+                onSelect
+                  ? () => onSelect(flight, `regular:${data.flights.indexOf(flight)}`)
+                  : undefined
+              }
               flight={flight}
               currency={request.currency}
               cabin={request.seat}

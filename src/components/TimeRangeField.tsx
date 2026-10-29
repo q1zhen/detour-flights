@@ -37,14 +37,16 @@ export function TimeRangeField({
         )}
       </div>
       <Slider.Root
-        className="time-range-bar"
-        value={value}
+        className="time-range-bar ticked-slider"
+        value={value.map((v) => (v === LAST_MINUTE ? 96 : Math.round(v / 15)))}
         min={0}
-        max={LAST_MINUTE}
+        max={96}
         step={1}
         minStepsBetweenThumbs={0}
         disabled={disabled}
-        onValueChange={(range) => onChange([range[0], range[1]])}
+        onValueChange={(range) =>
+          onChange([Math.min(LAST_MINUTE, range[0] * 15), Math.min(LAST_MINUTE, range[1] * 15)])
+        }
       >
         <Slider.Track className="time-range-track">
           <Slider.Range className="time-range-selected" />

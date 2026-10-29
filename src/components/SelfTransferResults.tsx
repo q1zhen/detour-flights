@@ -1,94 +1,21 @@
-import type { TransferProgress, MidpointStatus } from '../lib/self-transfer';
+import type { TransferProgress, TransferResult } from '../lib/self-transfer';
 import { formatPrice } from '../lib/format';
 import { SelfTransferCard } from './SelfTransferCard';
-
-const labels: Record<MidpointStatus, string> = {
-  queued: 'Queued',
-  pricing: 'Pricing',
-  ready: 'Ready',
-  searching: 'Searching',
-  results: 'Found',
-  empty: 'No results',
-  pruned: 'Price cutoff',
-  error: 'Failed',
-  cancelled: 'Cancelled',
-};
-export function MidpointSidebar({
-  progress,
-  loading,
-}: {
-  progress: TransferProgress | null;
-  loading: boolean;
-}) {
-  const finished =
-    progress?.midpoints.filter((h) => ['results', 'empty', 'pruned', 'error'].includes(h.status))
-      .length ?? 0;
-  const total = progress?.midpoints.length ?? 0;
-  const cancelled = progress?.phase === 'cancelled';
-  const progressValue = progress
-    ? total
-      ? finished
-      : progress.phase === 'complete'
-        ? 1
-        : 0
-    : loading
-      ? undefined
-      : 0;
-  return (
-    <aside className="midpoint-sidebar" aria-label="Midpoint search progress">
-      <h2>
-        Midpoints <span>{progress?.midpoints.length ?? '—'}</span>
-      </h2>
-      <div className="midpoint-progress-label" role="status">
-        <span>{progress ? `${finished}/${total}` : loading ? 'Waiting…' : 'Ready'}</span>
-        {cancelled && <span>Cancelled</span>}
-      </div>
-      <progress
-        className="midpoint-progress"
-        max={total || 1}
-        value={progressValue}
-        aria-label="Midpoint search progress"
-        aria-valuetext={
-          progress
-            ? `${finished} of ${total} finished${cancelled ? ', cancelled' : ''}`
-            : 'Waiting for midpoints'
-        }
-      />
-      {progress && !total && <p className="muted">No matching midpoints.</p>}
-      <ul>
-        {progress?.midpoints.map((hub) => (
-          <li key={hub.code} data-status={hub.status}>
-            <div>
-              <strong title={`${hub.airport.city} · ${hub.airport.name}`}>{hub.code}</strong>
-              <span>
-                {hub.status === 'results'
-                  ? `${hub.resultCount} found`
-                  : `${labels[hub.status]}${hub.resultCount ? ` · ${hub.resultCount} found` : ''}`}
-              </span>
-            </div>
-            {hub.status === 'error' && hub.message && (
-              <details className="midpoint-error">
-                <summary>Error details</summary>
-                <small>{hub.message}</small>
-              </details>
-            )}
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
 
 export function SelfTransferResults({
   progress,
   loading,
   error,
   currency,
+  selectedId,
+  onSelect,
 }: {
   progress: TransferProgress | null;
   loading: boolean;
   error: string | null;
   currency: string;
+  selectedId?: string;
+  onSelect?: (result: TransferResult) => void;
 }) {
   const errors = progress?.midpoints.filter((h) => h.status === 'error').length ?? 0;
   const phase = !progress
@@ -134,6 +61,8 @@ export function SelfTransferResults({
         {progress?.results.map((result) => (
           <SelfTransferCard
             key={result.id}
+            selected={selectedId === `transfer:${result.id}`}
+            onSelect={onSelect ? () => onSelect(result) : undefined}
             result={result}
             currency={currency}
             baselinePrice={progress.baselinePrice}

@@ -20,11 +20,15 @@ export function FlightCard({
   currency,
   cheapest,
   cabin,
+  selected,
+  onSelect,
 }: {
   flight: Flight;
   currency: string;
   cheapest: boolean;
   cabin?: Cabin;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const segments = flight.segments ?? [];
   const carbon = carbonComparison(flight.carbon?.emission, flight.carbon?.typicalOnRoute);
@@ -32,11 +36,22 @@ export function FlightCard({
   const airlines = flight.airlines?.filter(Boolean).join(' + ') || 'Airline unavailable';
   return (
     <article
-      className="flight-card"
+      className={`flight-card${selected ? ' selected-trip' : ''}`}
+      data-selected={selected || undefined}
       aria-label={`${airlines}, ${formatPrice(flight.price, currency)}`}
     >
-      <details className="flight-details">
-        <summary className="flight-row">
+      <details className="flight-details" open={onSelect ? selected : undefined}>
+        <summary
+          className="flight-row"
+          onClick={
+            onSelect
+              ? (event) => {
+                  event.preventDefault();
+                  onSelect();
+                }
+              : undefined
+          }
+        >
           <span className="sr-only">Flight details: </span>
           <FlightDirection segments={segments} />
           <span className="flight-meta">

@@ -30,3 +30,11 @@ The initial snapshot contains 4,038 entries. The prepared graph has 4,021 airpor
 and 59,228 directed edges. Sixteen entries lack usable time zones; KUB has invalid
 coordinates. The route graph suggests candidates only; it does not establish
 flight availability on any date. Pricing and availability come from the search API.
+
+## Globe land geometry
+
+`public/data/land.geojson` is the Natural Earth 1:110m land layer from
+[the Natural Earth repository](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson).
+Natural Earth data is [public domain](https://www.naturalearthdata.com/about/terms-of-use/).
+It is a static basemap, separate from the airport graph and its refresh script.
+Airport positions and candidate calculations continue to use `routes.json`.
