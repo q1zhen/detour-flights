@@ -132,3 +132,22 @@ describe('globe state', () => {
     expect(DURATION_TICKS.every((v, i) => !i || v > DURATION_TICKS[i - 1])).toBe(true);
   });
 });
+
+it('keeps only midpoints with results after completion or cancellation and preserves preview candidates', () => {
+  const filtered = { ...draft, filters: { ratio: 3, slackKm: 3000, minDegree: 1 } };
+  const progress = {
+    phase: 'joining',
+    midpoints: [
+      { code: 'BOS', status: 'results', resultCount: 2 },
+      { code: 'ORD', status: 'empty', resultCount: 0 },
+    ],
+  } as TransferProgress;
+  expect(midpointDots(graph, filtered, progress).map((d) => d.code)).toContain('ORD');
+  for (const phase of ['complete', 'cancelled'] as const) {
+    expect(midpointDots(graph, filtered, { ...progress, phase }).map((d) => d.code)).toEqual([
+      'BOS',
+    ]);
+    expect(midpointDots(graph, filtered, { ...progress, phase, midpoints: [] })).toEqual([]);
+  }
+  expect(midpointDots(graph, filtered, null).map((d) => d.code)).toContain('ORD');
+});

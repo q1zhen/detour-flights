@@ -23,8 +23,8 @@
   z-index: 2;
   top: 18px;
   left: 18px;
-  width: min(660px, 51vw);
-  max-height: min(900px, calc(100dvh - 36px));
+  width: calc(50vw - 18px);
+  max-height: calc(100dvh - 36px);
   border: 1px solid #ffffff30;
   border-radius: 16px;
   background: #f8fafdf5;
@@ -337,7 +337,7 @@
 .globe-controls {
   position: fixed;
   right: 26px;
-  bottom: 170px;
+  bottom: 215px;
   display: flex;
   gap: 5px;
 }
@@ -374,7 +374,11 @@
 }
 .globe-status progress {
   width: 100%;
-  height: 3px;
+  height: 12px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #263c53;
   accent-color: #67d9ff;
   display: block;
   margin: 10px 0 0;
@@ -383,24 +387,6 @@
   font-size: 11px;
   color: #e5c287;
   margin: 8px 0 0;
-}
-.globe-legend {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.globe-legend span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: #b3c7d9;
-}
-.globe-legend i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
 }
 .globe-inspector {
   margin-top: 10px;
@@ -437,7 +423,7 @@
 }
 @media (max-width: 1100px) and (min-width: 850px) {
   .floating-panel {
-    width: 54vw;
+    width: calc(50vw - 18px);
   }
   .floating-panel .route-grid.one-way {
     grid-template-columns: 1fr 24px 1fr;
@@ -460,14 +446,14 @@
     top: 10px;
     left: 10px;
     width: calc(100vw - 20px);
-    max-height: 55dvh;
+    max-height: calc(100dvh - 20px);
   }
   .panel-collapsed {
     width: min(330px, calc(100vw - 20px));
   }
   .globe-heading {
     top: auto;
-    bottom: 160px;
+    bottom: 215px;
     right: 18px;
     max-width: 70vw;
   }
@@ -478,7 +464,7 @@
     display: none;
   }
   .globe-controls {
-    bottom: 157px;
+    bottom: 215px;
     left: 16px;
     right: auto;
   }
@@ -541,4 +527,42 @@
 }
 .duration-scale > span:last-child {
   transform: translateX(-100%);
+}
+
+.globe-status progress::-webkit-progress-bar {
+  background: #263c53;
+  border-radius: 8px;
+}
+.globe-status progress::-webkit-progress-value {
+  background: #67d9ff;
+  border-radius: 8px;
+}
+.globe-status progress::-moz-progress-bar {
+  background: #67d9ff;
+  border-radius: 8px;
+}
+.globe-status-heading .search-percent {
+  font-size: 20px;
+  font-weight: 650;
+  color: #a3eaff;
+}
+.search-progress-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: #b3c9dd;
+}
+.project-link {
+  display: block;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #49657960;
+  font-size: 11px;
+  color: #9ddfff;
+  text-decoration: none;
+}
+.project-link:hover {
+  text-decoration: underline;
 }

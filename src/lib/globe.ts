@@ -69,6 +69,11 @@ export function midpointDots(
       (hub) =>
         !draft.block.includes(hub.code) && (!draft.allow.length || draft.allow.includes(hub.code)),
     )
+    .filter(
+      (hub) =>
+        !['complete', 'cancelled'].includes(progress?.phase ?? '') ||
+        (states.get(hub.code)?.resultCount ?? 0) > 0,
+    )
     .map((hub) => ({
       code: hub.code,
       lat: hub.airport.lat,

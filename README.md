@@ -46,10 +46,14 @@ Round trips remain disabled and multi-city is unsupported. No booking occurs in 
 Regular results appear first. A separate column then fills with two-ticket options,
 ranked by combined price and then elapsed journey duration. The full-screen globe shows candidate airports as status dots: grey for pending,
 red for no results, yellow for price cutoffs, and green as soon as a valid result
-arrives. Failed and cancelled searches stay grey unless they already found a
-result. Inspect a dot (or use the keyboard-accessible airport picker) for its status.
-The globe legend includes a completed-midpoint progress bar. Cancelled work does not count toward completion. Cancel keeps completed results and
-aborts pending work; starting another search clears the previous run.
+arrives. Retrying searches stay grey unless they already found a result. Inspect a dot (or use the keyboard-accessible airport picker) for its status.
+A prominent progress bar shows the completed-midpoint count and percentage,
+including the initial regular-flight search and automatic retry state. After
+completion or cancellation, only midpoints with results remain on the globe;
+selected itinerary airports stay visible. The bottom-right card links to this
+GitHub repository. Cancelled work does not count toward completion. Cancel keeps
+completed results and aborts pending work; starting another search clears the
+previous run.
 
 The form adds a separate self-transfer window (default 2–12 hours; configurable
 from 0 to 168 hours using discrete slider ticks). The shorter leg **must be nonstop**:
@@ -151,7 +155,8 @@ The integration targets the camelCase API documented on 2026-10-28 (upstream `go
 - `src/components/FlightResults.tsx`, `FlightCard.tsx`, `FlightDirection.tsx`: result states, sorting, and compact rows.
 - `src/components/SegmentDetails.tsx`, `LayoverDetails.tsx`: continuous itinerary timeline.
 - `src/components/FareDetails.tsx`, `CarrierLinks.tsx`, `SearchMetadata.tsx`: optional provider details.
-- `src/components/SelfTransferResults.tsx`, `SelfTransferCard.tsx`: combined route summaries, separate tickets, compact midpoint status list and progress.
+- `src/components/SelfTransferResults.tsx`, `SelfTransferCard.tsx`: combined route summaries and separate tickets.
+- `src/components/FlightGlobe.tsx`: globe, search progress, airport inspection, and project link.
 - `src/components/CandidateFilterSliders.tsx`: candidate distance/degree sliders and reset.
 - `src/lib/self-transfer.ts`: bounded progressive search, fare pruning and range-minimum joins.
 - `src/lib/routes.ts`, `flight-time.ts`: graph candidates, distances and airport-local datetime conversion.
@@ -176,9 +181,10 @@ midpoint is still searched, and that failures/cancellation preserve earlier matc
 
 [globe.gl](https://github.com/vasturiano/globe.gl) renders the full-screen interactive
 map. The compact search/results panel floats at the top left and scrolls independently;
-Minimize leaves the map available for rotation and zoom. On small screens it occupies
-at most the top 55% of the viewport. Regular and self-transfer results retain separate
-columns on desktop.
+Minimize leaves the map available for rotation and zoom. The panel can grow to the
+full viewport height (minus its outer margins) and half the desktop width. On
+small screens it uses the available width and can be minimized to explore the map.
+Regular and self-transfer results retain separate columns on desktop.
 
 The prepared airport graph loads immediately. Origin/destination, geographic sliders,
 and connection allow/block filters recompute candidate dots locally before any fare
@@ -202,3 +208,16 @@ locally (see data/README.md); no external basemap service is required. If WebGL 
 search and results remain usable. Tests cover preview filtering, status colours,
 partial-result precedence, segment/airport-transfer geometry, missing coordinates,
 date-line centring, discrete durations and exclusive selection markup.
+
+All regular and self-transfer price requests use the same `searchFlights` retry
+wrapper. Network errors, timeouts, HTTP errors, and malformed responses retry until
+success or explicit cancellation, with exponential delays of 1, 2, 4, 8, 16, then
+30 seconds. HTTP `Retry-After` delays are respected when longer. A successful empty
+response is final, not a failure. Cancellation aborts the current request or delay;
+replacing a search prevents stale retry notifications from updating the new run.
+The progress card announces active retries. Tests use fake timers to verify
+backoff, recovery, Retry-After, and cancellation without repeated live requests.
+
+The land layer uses 1-degree polygon-cap tessellation and a small surface offset
+to keep cap triangles from intersecting the globe mesh when zoomed in. Polygon
+transitions are disabled so the caps never animate through the ocean surface.

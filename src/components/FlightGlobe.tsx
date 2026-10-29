@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GlobeInstance } from 'globe.gl';
-import { MIDPOINT_COLORS, routeView } from '../lib/globe';
+import { routeView } from '../lib/globe';
 import type { AirportDot, RouteArc } from '../lib/globe';
 import type { TransferProgress } from '../lib/self-transfer';
 
@@ -22,6 +22,11 @@ export default function FlightGlobe({
   progress,
   dataError,
   missing,
+  loading = false,
+  cancelled = false,
+  searchFailed = false,
+  retryCount = 0,
+  retryMessage,
 }: {
   dots: AirportDot[];
   airports: AirportDot[];
@@ -30,6 +35,11 @@ export default function FlightGlobe({
   progress: TransferProgress | null;
   dataError: string | null;
   missing: string[];
+  loading?: boolean;
+  cancelled?: boolean;
+  searchFailed?: boolean;
+  retryCount?: number;
+  retryMessage?: string;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const globe = useRef<GlobeInstance | null>(null);
@@ -59,7 +69,10 @@ export default function FlightGlobe({
           .polygonCapColor(() => '#19384d')
           .polygonSideColor(() => '#19384d')
           .polygonStrokeColor(() => '#31566a')
-          .polygonAltitude(0.002)
+          // Fine caps stay above the globe instead of intersecting its mesh.
+          .polygonCapCurvatureResolution(1)
+          .polygonAltitude(0.006)
+          .polygonsTransitionDuration(0)
           .polygonLabel(() => '')
           .pointLat('lat')
           .pointLng('lng')
@@ -160,6 +173,22 @@ export default function FlightGlobe({
     progress?.midpoints.filter((h) => ['results', 'empty', 'pruned', 'error'].includes(h.status))
       .length ?? 0;
   const total = progress?.midpoints.length ?? dots.length;
+  const isCancelled = cancelled || progress?.phase === 'cancelled';
+  const complete = progress?.phase === 'complete';
+  const percent = total ? Math.floor((finished / total) * 100) : complete ? 100 : 0;
+  const phaseLabel = retryCount
+    ? `Retrying ${retryCount} ${retryCount === 1 ? 'search' : 'searches'}…`
+    : isCancelled
+      ? 'Cancelled'
+      : searchFailed
+        ? 'Search unavailable'
+        : complete
+          ? 'Complete'
+          : loading && !progress
+            ? 'Regular flights…'
+            : progress
+              ? 'Searching midpoints…'
+              : 'Ready to search';
   return (
     <section className="globe-stage" aria-label="Flight route globe">
       <div
@@ -200,34 +229,18 @@ export default function FlightGlobe({
       </div>
       <div className="globe-status">
         <div className="globe-status-heading">
-          <strong>{dots.length} midpoints</strong>
-          <span role="status">
-            {progress
-              ? `${finished}/${total} · ${progress.phase === 'complete' ? 'Complete' : progress.phase === 'cancelled' ? 'Cancelled' : 'Searching'}`
-              : 'Preview'}
-          </span>
+          <strong>Search progress</strong>
+          <span className="search-percent">{loading && !progress ? '…' : `${percent}%`}</span>
         </div>
-        {progress && (
-          <progress
-            aria-label="Midpoint search progress"
-            max={total || 1}
-            value={total ? finished : progress.phase === 'complete' ? 1 : 0}
-          />
-        )}
-        <div className="globe-legend">
-          {(
-            [
-              ['pending', 'Pending'],
-              ['empty', 'No results'],
-              ['expensive', 'Too expensive'],
-              ['results', 'Results'],
-            ] as const
-          ).map(([key, label]) => (
-            <span key={key}>
-              <i style={{ background: MIDPOINT_COLORS[key] }} />
-              {label}
-            </span>
-          ))}
+        <progress
+          aria-label="Search progress"
+          max={total || 1}
+          value={loading && !progress ? undefined : total ? finished : complete ? 1 : 0}
+          aria-valuetext={loading && !progress ? phaseLabel : `${percent}% · ${phaseLabel}`}
+        />
+        <div className="search-progress-detail" role="status">
+          <span title={retryMessage}>{phaseLabel}</span>
+          <span>{progress ? `${finished}/${total} midpoints` : `${dots.length} candidates`}</span>
         </div>
         {(error || dataError || missing.length > 0) && (
           <p role="status">
@@ -238,7 +251,7 @@ export default function FlightGlobe({
         <div className="globe-inspector">
           <select
             aria-label="Inspect midpoint"
-            value={inspected ?? ''}
+            value={dots.some((dot) => dot.code === inspected) ? inspected! : ''}
             onChange={(e) => {
               setInspected(e.target.value || null);
               const dot = dots.find((d) => d.code === e.target.value);
@@ -259,6 +272,14 @@ export default function FlightGlobe({
             </span>
           )}
         </div>
+        <a
+          className="project-link"
+          href="https://github.com/q1zhen/detour-flights"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub · q1zhen/detour-flights ↗
+        </a>
       </div>
     </section>
   );

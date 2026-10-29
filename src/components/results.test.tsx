@@ -312,8 +312,9 @@ it('reports completed midpoint progress and does not count cancelled work as com
   expect(cancelled).toContain('max="2" value="1"');
   expect(cancelled).toContain('Cancelled');
   const pending = renderToStaticMarkup(<FlightGlobe {...globeProps} progress={null} />);
-  expect(pending).toContain('Preview');
-  expect(pending).not.toContain('<progress');
+  expect(pending).toContain('Ready to search');
+  expect(pending).toContain('<progress');
+  expect(pending).toContain('value="0"');
 });
 
 it('keeps airline and class visible, defaults to long-leg scope, and uses the 2–12 hour window', () => {
@@ -377,4 +378,16 @@ it('renders only the centrally selected trip expanded, leaving nested ticket det
   );
   expect(unselected).not.toContain('data-selected="true"');
   expect(unselected).not.toContain('open=""');
+});
+
+it('shows obvious progress during baseline requests and retries, with a project link and no legend', () => {
+  const html = renderToStaticMarkup(
+    <FlightGlobe {...globeProps} progress={null} loading retryCount={1} />,
+  );
+  expect(html).toContain('Retrying 1 search');
+  expect(html).toContain('aria-label="Search progress"');
+  expect(html).not.toContain('globe-legend');
+  expect(html).toContain('href="https://github.com/q1zhen/detour-flights"');
+  const bar = html.match(/<progress[^>]*>/)?.[0];
+  expect(bar).not.toContain(' value=');
 });

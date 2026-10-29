@@ -4,6 +4,7 @@ import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { AppHeader } from './components/AppHeader';
 import { SearchForm } from './components/SearchForm';
 import { FlightResults } from './components/FlightResults';
+import type { SearchRetry } from './lib/api';
 import { SearchError, searchFlights } from './lib/api';
 import type { SearchRequest, SearchResponse } from './lib/types';
 import { SelfTransferResults } from './components/SelfTransferResults';
@@ -42,6 +43,7 @@ export default function App() {
   const [transferError, setTransferError] = useState<string | null>(null);
   const [error, setError] = useState<SearchError | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  const [retries, setRetries] = useState<Record<string, SearchRetry>>({});
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const visibleProgress = draft?.signature === searchSignature ? transfer : null;
@@ -64,6 +66,7 @@ export default function App() {
     const active = new AbortController();
     controller.current = active;
     setSelected(null);
+    setRetries({});
     setSearchSignature(draft?.signature ?? '');
     setLoading(true);
     setBaselineLoading(true);
@@ -73,8 +76,21 @@ export default function App() {
     setCancelled(false);
     setData(null);
     setRequest(next);
+    const query = (request: SearchRequest, signal?: AbortSignal) =>
+      searchFlights(request, signal, {
+        onRetry: (retry) => {
+          if (controller.current !== active || active.signal.aborted) return;
+          const key = JSON.stringify(request);
+          setRetries((previous) => {
+            const next = { ...previous };
+            if (retry) next[key] = retry;
+            else delete next[key];
+            return next;
+          });
+        },
+      });
     try {
-      const result = await searchFlights(next, active.signal);
+      const result = await query(next, active.signal);
       if (active.signal.aborted) return;
       setData(result);
       setBaselineLoading(false);
@@ -85,6 +101,7 @@ export default function App() {
         if (active.signal.aborted) return;
         await searchSelfTransfers({
           graph: routeGraph,
+          query,
           request: next,
           baseline: result.flights,
           options,
@@ -122,6 +139,11 @@ export default function App() {
         missing={geometry.missing}
         focusKey={selected?.id ?? `${draft?.from ?? ''}:${draft?.to ?? ''}`}
         progress={visibleProgress}
+        loading={loading}
+        cancelled={cancelled}
+        searchFailed={!!error || !!transferError}
+        retryCount={Object.keys(retries).length}
+        retryMessage={Object.values(retries)[0]?.message}
         dataError={graphError}
       />
       <div className={`floating-panel${collapsed ? ' panel-collapsed' : ''}`}>
@@ -148,6 +170,7 @@ export default function App() {
             loading={loading}
             onCancel={() => {
               controller.current?.abort();
+              setRetries({});
               setLoading(false);
               setBaselineLoading(false);
               setCancelled(true);
