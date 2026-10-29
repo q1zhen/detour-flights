@@ -110,7 +110,7 @@ export function SearchForm({
             Search
           </Button>
         </div>
-        <SearchOptions values={values} update={update} />
+        <SearchOptions values={values} update={update} disabled={loading} />
       </fieldset>
       {errors.length > 0 && (
         <Callout.Root color="red" role="alert" mt="3">

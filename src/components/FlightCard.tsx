@@ -12,6 +12,7 @@ import {
 import { FlightDirection } from './FlightDirection';
 import { SegmentDetails } from './SegmentDetails';
 import { LayoverDetails } from './LayoverDetails';
+import { FareDetails } from './FareDetails';
 
 export function FlightCard({
   flight,
@@ -106,6 +107,7 @@ export function FlightCard({
           ) : (
             <p className="muted">Segment details unavailable</p>
           )}
+          <FareDetails flight={flight} />
           <div className="details-footnote">
             <span>Local airport times</span>
             <span>

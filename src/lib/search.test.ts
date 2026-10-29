@@ -91,3 +91,74 @@ describe('flight search contract', () => {
     expect(validateSearch({ ...valid(), outboundAirlines: codes })).toHaveLength(1);
   });
 });
+
+it('serializes inclusive local time windows and omits unrestricted windows', () => {
+  const request = buildRequest({ ...valid(), departureTime: [480, 1080], arrivalTime: [0, 0] });
+  expect(request.filters).toEqual({
+    departureTime: { earliest: '08:00', latest: '18:00' },
+    arrivalTime: { earliest: '00:00', latest: '00:00' },
+  });
+  expect(buildRequest(valid()).filters).toBeUndefined();
+  expect(buildRequest({ ...valid(), arrivalTime: [1439, 1439] }).filters?.arrivalTime).toEqual({
+    earliest: '23:59',
+    latest: '23:59',
+  });
+});
+it('rejects reversed, invalid, and overnight time windows', () => {
+  expect(validateSearch({ ...valid(), departureTime: [1320, 360] })).toHaveLength(1);
+  expect(validateSearch({ ...valid(), arrivalTime: [0, 1440] })).toHaveLength(1);
+  expect(validateSearch({ ...valid(), arrivalTime: [NaN, 100] })).toHaveLength(1);
+  expect(validateSearch({ ...valid(), arrivalTime: [0.5, 100] })).toHaveLength(1);
+});
+it('supports alliances, per-layover limits, and allowed/blocked airports', () => {
+  const values = {
+    ...valid(),
+    outboundAirlines: 'aa, star_alliance',
+    minLayover: '0',
+    maxLayover: '180',
+    allowConnections: 'jfk lhr JFK',
+    blockConnections: 'ord',
+  };
+  expect(validateSearch(values)).toEqual([]);
+  expect(buildRequest(values)).toMatchObject({
+    flights: [{ airlines: ['AA', 'STAR_ALLIANCE'] }],
+    filters: {
+      layover: { minMinutes: 0, maxMinutes: 180 },
+      connectionAirports: { allow: ['JFK', 'LHR'], block: ['ORD'] },
+    },
+  });
+  expect(buildRequest({ ...valid(), maxLayover: '120' }).filters?.layover).toEqual({
+    maxMinutes: 120,
+  });
+});
+it('rejects bad layover limits and connection codes', () => {
+  expect(validateSearch({ ...valid(), minLayover: '180', maxLayover: '120' })).toHaveLength(1);
+  for (const value of ['-1', '1.5', 'bad', 'Infinity']) {
+    expect(validateSearch({ ...valid(), maxLayover: value })).toHaveLength(1);
+  }
+  expect(validateSearch({ ...valid(), allowConnections: 'AA' })).toHaveLength(1);
+  expect(validateSearch({ ...valid(), blockConnections: '123' })).toHaveLength(1);
+});
+it('never sends obsolete or unknown request properties to the strict API', () => {
+  const values = {
+    ...valid(),
+    passengers: { adults: 2, children: 1, infantsInSeat: 1, infantsOnLap: 1 },
+  };
+  const request = buildRequest(values);
+  expect(Object.keys(request).sort()).toEqual([
+    'currency',
+    'flights',
+    'language',
+    'passengers',
+    'region',
+    'seat',
+    'trip',
+  ]);
+  expect(Object.keys(request.passengers)).toEqual([
+    'adults',
+    'children',
+    'infantsInSeat',
+    'infantsOnLap',
+  ]);
+  expect(Object.keys(request.flights[0])).toEqual(['date', 'fromAirport', 'toAirport']);
+});

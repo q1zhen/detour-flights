@@ -24,7 +24,11 @@ export function SegmentDetails({
       </li>
       <li className="timeline-flight">
         <span>{formatDuration(segment.durationMinutes)} flight</span>
+        {(segment.flightNumber || segment.operatingCarrier) && (
+          <span>{segment.flightNumber || segment.operatingCarrier}</span>
+        )}
         {segment.planeType && <span>{segment.planeType}</span>}
+        {segment.legroom && <span>{segment.legroom} legroom</span>}
       </li>
       <li className={`timeline-point ${last ? 'timeline-end' : ''}`}>
         <span className="timeline-time">

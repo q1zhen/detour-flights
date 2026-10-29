@@ -86,3 +86,17 @@ it('preserves one-way segments, exact fares, and booking URLs', async () => {
   expect(response.flights[0].segments).toHaveLength(2);
   expect(response.flights[0].price).toBe(553);
 });
+
+it('rejects obsolete nested-flight responses instead of silently showing empty itineraries', async () => {
+  const { segments: _segments, ...rest } = oneWayFlight;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json({
+        flights: [{ ...rest, flights: oneWayFlight.segments }],
+        metadata: emptyMetadata,
+      }),
+    ),
+  );
+  await expect(searchFlights(request)).rejects.toThrow('unexpected response');
+});

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Badge, Skeleton } from '@radix-ui/themes';
+import { Skeleton } from '@radix-ui/themes';
 import type { SearchRequest, SearchResponse } from '../lib/types';
 import { flightMinutes, formatSearchDate } from '../lib/format';
 import { FlightCard } from './FlightCard';
 import { SelectField } from './SelectField';
+import { SearchMetadata } from './SearchMetadata';
 
 export function FlightResults({
   data,
@@ -69,7 +70,7 @@ export function FlightResults({
       </div>
       <p className="result-count" role="status">
         {flights.length} {flights.length === 1 ? 'flight' : 'flights'}{' '}
-        <span>· Prices can change</span>
+        <span>· Prices can change{request.filters ? ' · Filtered provider results' : ''}</span>
       </p>
 
       {flights.length ? (
@@ -89,37 +90,7 @@ export function FlightResults({
           <p>Try another date or fewer filters.</p>
         </div>
       )}
-      {(data.metadata.airlines.length > 0 || data.metadata.alliances.length > 0) && (
-        <details className="metadata">
-          <summary>Airlines & alliances</summary>
-          <div className="metadata-body">
-            {data.metadata.airlines.length > 0 && (
-              <div>
-                <strong>Airlines</strong>
-                <div className="metadata-chips">
-                  {data.metadata.airlines.map((airline, index) => (
-                    <Badge color="gray" key={`${airline.code}-${index}`}>
-                      {airline.name || 'Unnamed airline'} · {airline.code}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {data.metadata.alliances.length > 0 && (
-              <div>
-                <strong>Alliances</strong>
-                <div className="metadata-chips">
-                  {data.metadata.alliances.map((alliance, index) => (
-                    <Badge color="gray" key={`${alliance.code}-${index}`}>
-                      {alliance.name || 'Unnamed alliance'} · {alliance.code}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </details>
-      )}
+      <SearchMetadata metadata={data.metadata} currency={request.currency} />
     </section>
   );
 }

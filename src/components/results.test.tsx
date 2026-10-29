@@ -97,3 +97,52 @@ it('offers only a departure date and no round-trip or return-flight controls', (
   expect(html).not.toContain('Currency');
   expect(html).not.toContain('Language');
 });
+
+it('shows provider layovers, flight numbers, and baggage hints', () => {
+  const html = renderToStaticMarkup(
+    <FlightCard
+      flight={{
+        ...oneWayFlight,
+        layovers: [{ ...oneWayFlight.layovers[0], durationMinutes: 135 }],
+      }}
+      currency="USD"
+      cheapest={false}
+    />,
+  );
+  expect(html).toContain('2h 15m');
+  expect(html).toContain('AA123');
+  expect(html).toContain('31 in');
+  expect(html).toContain('Checked baggage included');
+  expect(html).not.toContain('local-clock estimates');
+});
+it('does not invent layover durations when upstream values are missing', () => {
+  const html = renderToStaticMarkup(
+    <FlightCard flight={{ ...oneWayFlight, layovers: [] }} currency="USD" cheapest={false} />,
+  );
+  expect(html).toContain('Duration unavailable');
+});
+it('distinguishes airport transfers from same-airport layovers', () => {
+  const flight = {
+    ...oneWayFlight,
+    layovers: [{ ...oneWayFlight.layovers[0], changeOfAirport: true }],
+    segments: [
+      oneWayFlight.segments[0],
+      { ...oneWayFlight.segments[1], fromAirport: { code: 'MDW', name: 'Midway' } },
+    ],
+  };
+  const html = renderToStaticMarkup(<FlightCard flight={flight} currency="USD" cheapest={false} />);
+  expect(html).toContain('transfer');
+  expect(html).toContain('Change airports');
+  expect(html).toContain('ORD → MDW');
+});
+it('renders accessible two-handle time bars and disables them during searches', () => {
+  const html = renderToStaticMarkup(
+    <SearchForm onSearch={() => {}} loading={true} onCancel={() => {}} />,
+  );
+  expect(html.match(/role="slider"/g)).toHaveLength(4);
+  expect(html).toContain('aria-label="Departure time earliest"');
+  expect(html).toContain('aria-label="Arrival time latest"');
+  expect(html).toContain('aria-valuetext="00:00"');
+  expect(html).toContain('aria-valuetext="23:59"');
+  expect(html.match(/aria-disabled="true"/g)).toHaveLength(2);
+});
