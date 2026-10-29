@@ -424,3 +424,47 @@ describe('two-phase self-transfer search', () => {
       expect(validateTransferOptions(options)).toBe(false);
   });
 });
+
+it.each([1, 19])(
+  'requires a nonstop short leg on either side of the midpoint (longitude %s)',
+  async (lon) => {
+    const req = request();
+    req.maxStops = 2;
+    req.flights[0].maxStops = 1;
+    const shortLeg = lon === 1 ? 1 : 2;
+    const query: FlightQuery = async (next) => {
+      const leg = next.flights[0];
+      const isLeg1 = leg.fromAirport === 'AAA';
+      const isShort = (isLeg1 ? 1 : 2) === shortLeg;
+      expect(next.maxStops).toBe(isShort ? 0 : 2);
+      expect(leg.maxStops).toBe(isShort ? 0 : 1);
+      if (leg.date !== '2027-01-20') return response([]);
+      const nonstop = flight(
+        leg.fromAirport,
+        leg.toAirport,
+        100,
+        isLeg1 ? '2027-01-20T06:00' : '2027-01-20T12:00',
+        isLeg1 ? '2027-01-20T10:00' : '2027-01-20T18:00',
+      );
+      const connecting = {
+        ...nonstop,
+        price: 20,
+        stopCount: 1,
+        segments: [
+          { ...nonstop.segments[0], toAirport: { code: 'XXX', name: 'Connection' } },
+          { ...nonstop.segments[0], fromAirport: { code: 'XXX', name: 'Connection' } },
+        ],
+      };
+      return response([connecting, nonstop]);
+    };
+    const result = await run(query, { graph: graph([['HAA', lon]]), request: req });
+    expect(result.results.length).toBeGreaterThan(0);
+    for (const resultFlight of result.results) {
+      expect((shortLeg === 1 ? resultFlight.leg1 : resultFlight.leg2).segments).toHaveLength(1);
+    }
+    expect(result.results[0].price).toBe(120);
+    expect(result.skippedFlights).toBe(1);
+    expect(req.maxStops).toBe(2);
+    expect(req.flights[0].maxStops).toBe(1);
+  },
+);

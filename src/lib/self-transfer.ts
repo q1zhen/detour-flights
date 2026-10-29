@@ -73,6 +73,7 @@ function normalize(
   date: string,
   original: SearchRequest,
   leg: 1 | 2,
+  nonstop: boolean,
 ) {
   const out: TimedFlight[] = [];
   let skipped = 0;
@@ -82,6 +83,7 @@ function normalize(
     const last = flight.segments.at(-1);
     if (
       !validPrice(flight.price) ||
+      (nonstop && (flight.segments.length !== 1 || flight.stopCount !== 0)) ||
       first?.fromAirport?.code !== from ||
       last?.toAirport?.code !== to
     ) {
@@ -223,6 +225,7 @@ export async function searchSelfTransfers({
   const cache = new Map<string, Promise<SearchResponse>>();
   async function fetchLeg(hub: MidpointProgress, leg: 1 | 2, date: string) {
     check();
+    const nonstop = leg !== hub.longLeg;
     const from = leg === 1 ? original.fromAirport : hub.code;
     const to = leg === 1 ? hub.code : original.toAirport;
     // No absolute datetime filters exist in this API. Query a whole local day,
@@ -232,7 +235,16 @@ export async function searchSelfTransfers({
     delete filters.arrivalTime;
     const next: SearchRequest = {
       ...request,
-      flights: [{ ...original, fromAirport: from, toAirport: to, date }],
+      flights: [
+        {
+          ...original,
+          fromAirport: from,
+          toAirport: to,
+          date,
+          ...(nonstop ? { maxStops: 0 } : {}),
+        },
+      ],
+      ...(nonstop ? { maxStops: 0 } : {}),
       ...(Object.keys(filters).length ? { filters } : {}),
     };
     if (!Object.keys(filters).length) delete next.filters;
@@ -244,7 +256,7 @@ export async function searchSelfTransfers({
     }
     const data = await pending;
     check();
-    const normalized = normalize(data.flights, graph, from, to, date, request, leg);
+    const normalized = normalize(data.flights, graph, from, to, date, request, leg, nonstop);
     state.skippedFlights += normalized.skipped;
     return normalized.flights;
   }
