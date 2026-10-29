@@ -1,7 +1,7 @@
 import { candidates } from './routes';
 import type { CandidateFilters, RouteGraph } from './routes';
 import type { Flight } from './types';
-import type { MidpointProgress, TransferProgress } from './self-transfer';
+import type { MidpointProgress, TransferProgress, TransferOptions } from './self-transfer';
 
 export interface GlobeDraft {
   from: string;
@@ -10,6 +10,8 @@ export interface GlobeDraft {
   allow: string[];
   block: string[];
   signature: string;
+  requestKey?: string;
+  transferOptions?: TransferOptions;
 }
 export interface SelectedTrip {
   id: string;
@@ -113,7 +115,7 @@ export function tripGeometry(
       startLng: a.lon,
       endLat: b.lat,
       endLng: b.lon,
-      color: ground ? '#f7c84e' : ticket === 0 ? '#66d9ff' : '#c4a1ff',
+      color: '#ffbe45',
       label: `${from} → ${to}${ground ? ' · Airport transfer' : ` · Ticket ${ticket + 1}`}`,
       ground,
     });
@@ -160,4 +162,45 @@ export function routeView(airports: { lat: number; lng: number }[]) {
     [0, 0, 0],
   );
   return { lat: Math.atan2(z, Math.hypot(x, y)) / rad, lng: Math.atan2(y, x) / rad, altitude: 1.8 };
+}
+
+// Keep a continuous fine line underneath a single travelling highlight.
+// Unlike a dashed route, its entire path stays visible throughout the animation.
+export function routeArcLayers(arcs: RouteArc[], reducedMotion: boolean) {
+  return arcs.flatMap((arc, index) => [
+    {
+      ...arc,
+      layer: 'glow',
+      color: 'rgba(255,190,69,0.14)',
+      stroke: 0.32,
+      dashLength: 1,
+      dashGap: 0,
+      animateTime: 0,
+      initialGap: 0,
+    },
+    {
+      ...arc,
+      layer: 'line',
+      color: '#ffbe45',
+      stroke: 0.11,
+      dashLength: 1,
+      dashGap: 0,
+      animateTime: 0,
+      initialGap: 0,
+    },
+    ...(!reducedMotion && !arc.ground
+      ? [
+          {
+            ...arc,
+            layer: 'pulse',
+            color: '#fff0b3',
+            stroke: 0.19,
+            dashLength: 0.035,
+            dashGap: 1,
+            animateTime: 3600,
+            initialGap: index * 0.19,
+          },
+        ]
+      : []),
+  ]);
 }

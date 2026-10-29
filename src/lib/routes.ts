@@ -3,14 +3,15 @@ export interface CandidateFilters {
   slackKm: number;
   minDegree: number;
 }
+export const FIXED_DISTANCE_ALLOWANCE_KM = 300;
 export const DEFAULT_CANDIDATE_FILTERS: CandidateFilters = {
-  ratio: 1.25,
-  slackKm: 300,
-  minDegree: 10,
+  ratio: 1.3,
+  slackKm: FIXED_DISTANCE_ALLOWANCE_KM,
+  minDegree: 70,
 };
 export const CANDIDATE_FILTER_LIMITS = {
   ratio: { min: 1, max: 3, step: 0.05 },
-  slackKm: { min: 0, max: 3000, step: 50 },
+  slackKm: { min: FIXED_DISTANCE_ALLOWANCE_KM, max: FIXED_DISTANCE_ALLOWANCE_KM, step: 50 },
   minDegree: { min: 0, max: 500, step: 1 },
 };
 export function validCandidateFilters(filters: CandidateFilters) {

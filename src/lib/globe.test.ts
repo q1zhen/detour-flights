@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  routeArcLayers,
   midpointAppearance,
   midpointDots,
   tripGeometry,
@@ -109,7 +110,8 @@ describe('globe state', () => {
     const result = tripGeometry(graph, { id: 'split', flights: [first, second], midpoint: 'BOS' });
     expect(result.airports.map((a) => a.code)).toEqual(['JFK', 'BOS', 'ORD', 'LHR']);
     expect(result.arcs.map((a) => a.ground)).toEqual([false, true, false]);
-    expect(result.arcs[0].color).not.toBe(result.arcs[2].color);
+    expect(result.arcs[0].color).toBe('#ffbe45');
+    expect(result.arcs[2].color).toBe('#ffbe45');
     expect(result.missing).toEqual(['UNK']);
     expect(result.airports.find((a) => a.code === 'BOS')?.status).toBe('Self-transfer');
     expect(tripGeometry(graph, null, ['JFK', 'LHR']).arcs).toEqual([]);
@@ -150,4 +152,23 @@ it('keeps only midpoints with results after completion or cancellation and prese
     expect(midpointDots(graph, filtered, { ...progress, phase, midpoints: [] })).toEqual([]);
   }
   expect(midpointDots(graph, filtered, null).map((d) => d.code)).toContain('ORD');
+});
+
+it('keeps a complete amber route under the moving highlight and respects reduced motion', () => {
+  const arc = {
+    startLat: 0,
+    startLng: 0,
+    endLat: 10,
+    endLng: 10,
+    color: '#ffbe45',
+    label: 'AAA → BBB',
+    ground: false,
+  };
+  const layers = routeArcLayers([arc], false);
+  const line = layers.find((a) => a.layer === 'line')!;
+  expect(line).toMatchObject({ color: '#ffbe45', dashLength: 1, dashGap: 0, animateTime: 0 });
+  expect(line.stroke).toBeLessThan(0.2);
+  expect(layers.find((a) => a.layer === 'pulse')?.animateTime).toBeGreaterThan(0);
+  expect(routeArcLayers([arc], true).every((a) => a.animateTime === 0)).toBe(true);
+  expect(routeArcLayers([arc], true).some((a) => a.layer === 'line')).toBe(true);
 });

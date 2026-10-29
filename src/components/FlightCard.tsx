@@ -2,13 +2,7 @@ import { Fragment } from 'react';
 import { Badge, Button } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import type { Cabin, Flight } from '../lib/types';
-import {
-  bookingUrl,
-  carbonComparison,
-  flightMinutes,
-  formatDuration,
-  formatPrice,
-} from '../lib/format';
+import { bookingUrl, flightMinutes, formatPrice } from '../lib/format';
 import { FlightDirection } from './FlightDirection';
 import { CabinBadge } from './CabinBadge';
 import { SegmentDetails } from './SegmentDetails';
@@ -31,7 +25,6 @@ export function FlightCard({
   onSelect?: () => void;
 }) {
   const segments = flight.segments ?? [];
-  const carbon = carbonComparison(flight.carbon?.emission, flight.carbon?.typicalOnRoute);
   const url = bookingUrl(flight.googleFlightsUrl);
   const airlines = flight.airlines?.filter(Boolean).join(' + ') || 'Airline unavailable';
   return (
@@ -53,32 +46,19 @@ export function FlightCard({
           }
         >
           <span className="sr-only">Flight details: </span>
-          <FlightDirection segments={segments} />
+          <FlightDirection
+            segments={segments}
+            durationMinutes={flightMinutes(flight)}
+            connectionDurations={segments
+              .slice(0, -1)
+              .map((_, i) => flight.layovers?.[i]?.durationMinutes)}
+          />
           <span className="flight-meta">
-            <strong>
-              {formatDuration(flightMinutes(flight))} <small>total</small>
-            </strong>
             <span>{airlines}</span>
             {cabin && (
               <span className="cabin-labels">
                 <CabinBadge cabin={cabin} />
               </span>
-            )}
-          </span>
-          <span className="flight-carbon">
-            {flight.carbon?.emission > 0 ? (
-              <>
-                <span>{(flight.carbon.emission / 1000).toLocaleString()} kg CO₂</span>
-                {carbon && (
-                  <span className={carbon.difference < 0 ? 'carbon-lower' : 'muted'}>
-                    {carbon.difference === 0
-                      ? 'Typical'
-                      : `${carbon.difference > 0 ? '+' : ''}${carbon.difference}% vs. typical`}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="muted">CO₂ unavailable</span>
             )}
           </span>
           <span className="flight-price">
@@ -131,17 +111,6 @@ export function FlightCard({
             <p className="muted">Segment details unavailable</p>
           )}
           <FareDetails flight={flight} />
-          <div className="details-footnote">
-            <span>Local airport times</span>
-            <span>
-              CO₂:{' '}
-              {flight.carbon?.emission > 0
-                ? `${(flight.carbon.emission / 1000).toLocaleString()} kg`
-                : 'unavailable'}
-              {flight.carbon?.typicalOnRoute > 0 &&
-                ` · typical ${(flight.carbon.typicalOnRoute / 1000).toLocaleString()} kg`}
-            </span>
-          </div>
         </div>
       </details>
     </article>

@@ -43,20 +43,24 @@ export function SelfTransferCard({
           <span className="sr-only">Self-transfer via {result.midpoint}: </span>
           <FlightDirection
             segments={segments}
+            durationMinutes={result.durationMinutes}
+            connectionDurations={[
+              ...result.leg1.segments
+                .slice(0, -1)
+                .map((_, i) => result.leg1.layovers?.[i]?.durationMinutes),
+              result.transferMinutes,
+              ...result.leg2.segments
+                .slice(0, -1)
+                .map((_, i) => result.leg2.layovers?.[i]?.durationMinutes),
+            ]}
             selfTransferIndex={result.leg1.segments.length - 1}
           />
           <span className="flight-meta">
-            <strong>
-              {formatDuration(result.durationMinutes)} <small>total</small>
-            </strong>
             <span>{airlines || 'Airline unavailable'}</span>
             <span className="cabin-labels">
               <CabinBadge cabin={result.leg1Cabin} ticket={1} />
               <CabinBadge cabin={result.leg2Cabin} ticket={2} />
             </span>
-            <small>
-              {formatDuration(result.transferMinutes)} transfer at {result.midpoint}
-            </small>
           </span>
           <span className="flight-price">
             <strong>{formatPrice(result.price, currency)}</strong>

@@ -54,7 +54,7 @@
   height: 26px;
 }
 .panel-header .service-status {
-  font-size: 11px;
+  font-size: 13px;
 }
 .panel-toggle {
   border: 0;
@@ -62,7 +62,7 @@
   background: none;
   color: #53627a;
   padding-left: 14px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel main {
   padding: 12px;
@@ -90,11 +90,11 @@
   gap: 7px;
 }
 .floating-panel .field {
-  font-size: 11px;
+  font-size: 13px;
   gap: 4px;
 }
 .floating-panel .field small {
-  font-size: 9px;
+  font-size: 11px;
 }
 .floating-panel .route-field .rt-TextFieldRoot,
 .floating-panel .date-field .rt-TextFieldRoot,
@@ -107,7 +107,7 @@
 .floating-panel .search-button {
   min-width: 36px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 13px;
   gap: 5px;
 }
 .floating-panel .search-button svg {
@@ -128,11 +128,11 @@
 }
 .floating-panel .preference-switch {
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel .field .rt-TextFieldRoot,
 .floating-panel .field .rt-SelectTrigger {
-  font-size: 12px;
+  font-size: 14px;
 }
 .floating-panel .transfer-options {
   display: flex;
@@ -146,12 +146,12 @@
   flex: 1;
 }
 .floating-panel .column-tag {
-  font-size: 9px;
+  font-size: 11px;
   padding: 4px 6px;
 }
 .floating-panel .time-range-heading,
 .floating-panel .time-range-heading strong {
-  font-size: 11px;
+  font-size: 13px;
   gap: 7px;
 }
 .floating-panel .time-range-bar {
@@ -163,7 +163,7 @@
   border-width: 2px;
 }
 .floating-panel .time-range-scale {
-  font-size: 9px;
+  font-size: 11px;
 }
 .ticked-slider .time-range-track {
   background-image: repeating-linear-gradient(
@@ -182,7 +182,7 @@
   border: 0;
 }
 .floating-panel .filter-footer {
-  font-size: 9px;
+  font-size: 11px;
   margin-top: 4px;
 }
 .floating-panel .filter-footer span:nth-child(2) {
@@ -198,7 +198,7 @@
   margin-top: 10px;
 }
 .floating-panel .search-options > summary {
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel .candidate-filters {
   margin-top: 10px;
@@ -209,16 +209,16 @@
   margin-bottom: 6px;
 }
 .floating-panel .candidate-filter-heading h3 {
-  font-size: 12px;
+  font-size: 14px;
 }
 .floating-panel .candidate-filter-heading > span {
-  font-size: 9px;
+  font-size: 11px;
 }
 .floating-panel .candidate-filter-heading .rt-Button {
-  font-size: 10px;
+  font-size: 12px;
 }
 .floating-panel .candidate-filter-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 .floating-panel .candidate-filter-grid .time-range-heading {
@@ -234,7 +234,7 @@
 }
 .floating-panel .column-title,
 .floating-panel .results-heading h2 {
-  font-size: 14px;
+  font-size: 16px;
   margin-bottom: 6px;
 }
 .floating-panel .results-heading {
@@ -244,15 +244,15 @@
 }
 .floating-panel .result-count,
 .floating-panel .muted {
-  font-size: 10px;
+  font-size: 12px;
 }
 .floating-panel .transfer-advice {
   padding: 6px;
-  font-size: 10px;
+  font-size: 12px;
   margin-bottom: 6px;
 }
 .floating-panel .results-heading .rt-SelectTrigger {
-  font-size: 10px;
+  font-size: 12px;
   height: 24px;
 }
 .floating-panel .flight-row {
@@ -260,33 +260,33 @@
   gap: 8px;
 }
 .floating-panel .route-endpoint > strong {
-  font-size: 17px;
+  font-size: 19px;
 }
 .floating-panel .route-endpoint > span {
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel .flight-route {
   gap: 5px;
 }
 .floating-panel .flight-meta > strong {
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel .flight-meta > span,
 .floating-panel .flight-meta small {
-  font-size: 10px;
+  font-size: 12px;
 }
 .floating-panel .flight-price > strong {
-  font-size: 18px;
+  font-size: 20px;
 }
 .floating-panel .flight-price > span,
 .floating-panel .transfer-savings {
-  font-size: 9px;
+  font-size: 11px;
 }
 .floating-panel .route-track > span {
-  font-size: 9px;
+  font-size: 11px;
 }
 .floating-panel .cabin-labels .cabin-badge {
-  font-size: 9px;
+  font-size: 11px;
   padding: 2px 4px;
 }
 .floating-panel .selected-trip {
@@ -305,10 +305,10 @@
   gap: 6px;
 }
 .floating-panel .timeline-time > strong {
-  font-size: 14px;
+  font-size: 16px;
 }
 .floating-panel .timeline-airport {
-  font-size: 11px;
+  font-size: 13px;
 }
 .floating-panel .flight-card {
   overflow: hidden;
@@ -573,4 +573,116 @@
   .floating-panel:not(.panel-collapsed) {
     width: calc(38vw - 18px);
   }
+}
+
+.midpoint-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #bdd2ed;
+  background: #eaf2ff;
+  color: #145ca8;
+  padding: 5px 9px;
+  border-radius: 16px;
+  margin: 5px 0;
+  font-size: 11px;
+}
+.clear-map-filter {
+  color: #a3eaff;
+  background: none;
+  border: 0;
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 4px;
+}
+
+/* Keep itinerary details readable within the floating results columns. */
+.floating-panel .route-overview {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 13px;
+  color: #42536b;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+.floating-panel .flight-route {
+  align-items: start;
+}
+.floating-panel .route-track {
+  margin-top: 10px;
+  padding-bottom: 40px;
+}
+.floating-panel .self-transfer-route .route-track {
+  padding-bottom: 56px;
+}
+.floating-panel .connection-marker > span {
+  text-align: center;
+  font-size: 12px;
+  line-height: 16px;
+}
+.floating-panel .connection-duration {
+  display: block;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+  color: #42536b;
+}
+.floating-panel .flight-meta {
+  min-width: 0;
+}
+.floating-panel .layover-label {
+  background: none;
+  color: #42536b;
+  padding: 0;
+  border-radius: 0;
+  font-size: 14px;
+}
+.floating-panel .layover-label strong {
+  font-size: inherit;
+  font-weight: 500;
+}
+.floating-panel .itinerary-timeline > .timeline-layover::before {
+  background: none;
+  width: 0;
+  border-left: 2px dotted #8b9bb0;
+}
+.floating-panel .transfer-divider {
+  color: #42536b;
+  background: none;
+  border-radius: 0;
+  border-left: 2px dotted #8b9bb0;
+  padding: 10px 0 10px 14px;
+  font-size: 14px;
+}
+.start-transfer-search {
+  margin: 6px 0 10px;
+  width: 100%;
+}
+
+.floating-panel .route-endpoint {
+  grid-row: 2;
+  grid-column: 1;
+}
+.floating-panel .route-arrival {
+  grid-column: 3;
+}
+.floating-panel .route-track {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  margin: 2px 0 0;
+}
+.endpoint-marker {
+  position: relative;
+}
+.endpoint-marker > span {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #42536b;
+}
+.endpoint-marker-arrival > span {
+  left: auto;
+  right: 0;
 }

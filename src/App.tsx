@@ -24,6 +24,7 @@ export default function App() {
   const [draft, setDraft] = useState<GlobeDraft | null>(null);
   const [searchSignature, setSearchSignature] = useState('');
   const [selected, setSelected] = useState<SelectedTrip | null>(null);
+  const [midpointFilter, setMidpointFilter] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function App() {
   }, []);
   const [data, setData] = useState<SearchResponse | null>(null);
   const [request, setRequest] = useState<SearchRequest | null>(null);
+  const [transferOptions, setTransferOptions] = useState<TransferOptions | null>(null);
   const [loading, setLoading] = useState(false);
   const [baselineLoading, setBaselineLoading] = useState(false);
   const [transfer, setTransfer] = useState<TransferProgress | null>(null);
@@ -62,22 +64,16 @@ export default function App() {
   function selectTrip(next: SelectedTrip) {
     setSelected((previous) => (previous?.id === next.id ? null : next));
   }
-  async function search(next: SearchRequest, options: TransferOptions) {
-    controller.current?.abort();
-    const active = new AbortController();
-    controller.current = active;
-    setSelected(null);
-    setRetries({});
-    setSearchSignature(draft?.signature ?? '');
-    setLoading(true);
-    setBaselineLoading(true);
-    setTransfer(null);
-    setTransferError(null);
-    setError(null);
-    setCancelled(false);
-    setData(null);
-    setRequest(next);
-    const query = (request: SearchRequest, signal?: AbortSignal) =>
+  function toggleMidpoint(code: string | null) {
+    const next = code === midpointFilter ? null : code;
+    setMidpointFilter(next);
+    setSelected((previous) =>
+      next && previous?.midpoint && previous.midpoint !== next ? null : previous,
+    );
+  }
+  const regularRequestChanged = !!request && draft?.requestKey !== JSON.stringify(request);
+  function queryFor(active: AbortController) {
+    return (request: SearchRequest, signal?: AbortSignal) =>
       searchFlights(request, signal, {
         onRetry: (retry) => {
           if (controller.current !== active || active.signal.aborted) return;
@@ -90,33 +86,67 @@ export default function App() {
           });
         },
       });
+  }
+  async function startTransfers() {
+    if (!data || !request || !transferOptions || loading || regularRequestChanged) return;
+    controller.current?.abort();
+    const active = new AbortController();
+    controller.current = active;
+    setLoading(true);
+    setCancelled(false);
+    setRetries({});
+    setTransfer(null);
+    setTransferError(null);
+    setMidpointFilter(null);
+    setSelected((previous) => (previous?.midpoint ? null : previous));
+    setSearchSignature(draft?.signature ?? '');
     try {
-      const result = await query(next, active.signal);
+      const routeGraph = graph ?? (await loadRoutes(active.signal));
+      if (active.signal.aborted) return;
+      setGraph(routeGraph);
+      setGraphError(null);
+      await searchSelfTransfers({
+        graph: routeGraph,
+        query: queryFor(active),
+        request,
+        baseline: data.flights,
+        options: draft?.transferOptions ?? transferOptions,
+        signal: active.signal,
+        onProgress: (progress) => {
+          if (controller.current === active && !active.signal.aborted) setTransfer(progress);
+        },
+      });
+    } catch (failure) {
+      if (!active.signal.aborted)
+        setTransferError(
+          failure instanceof Error ? failure.message : 'Self-transfer search failed.',
+        );
+    } finally {
+      if (controller.current === active) setLoading(false);
+    }
+  }
+  async function search(next: SearchRequest, options: TransferOptions) {
+    controller.current?.abort();
+    const active = new AbortController();
+    controller.current = active;
+    setSelected(null);
+    setMidpointFilter(null);
+    setRetries({});
+    setSearchSignature(draft?.signature ?? '');
+    setLoading(true);
+    setBaselineLoading(true);
+    setTransfer(null);
+    setTransferError(null);
+    setError(null);
+    setCancelled(false);
+    setData(null);
+    setRequest(next);
+    setTransferOptions(options);
+    try {
+      const result = await queryFor(active)(next, active.signal);
       if (active.signal.aborted) return;
       setData(result);
       setBaselineLoading(false);
-      try {
-        const routeGraph = graph ?? (await loadRoutes(active.signal));
-        setGraph(routeGraph);
-        setGraphError(null);
-        if (active.signal.aborted) return;
-        await searchSelfTransfers({
-          graph: routeGraph,
-          query,
-          request: next,
-          baseline: result.flights,
-          options,
-          signal: active.signal,
-          onProgress: (progress) => {
-            if (controller.current === active && !active.signal.aborted) setTransfer(progress);
-          },
-        });
-      } catch (failure) {
-        if (!active.signal.aborted)
-          setTransferError(
-            failure instanceof Error ? failure.message : 'Self-transfer search failed.',
-          );
-      }
     } catch (failure) {
       if (!active.signal.aborted)
         setError(
@@ -134,6 +164,8 @@ export default function App() {
   return (
     <div className="app-shell globe-app">
       <FlightGlobe
+        midpointFilter={midpointFilter}
+        onToggleMidpoint={toggleMidpoint}
         panelRef={panelRef}
         panelCollapsed={collapsed}
         dots={dots}
@@ -143,6 +175,8 @@ export default function App() {
         focusKey={selected?.id ?? `${draft?.from ?? ''}:${draft?.to ?? ''}`}
         progress={visibleProgress}
         loading={loading}
+        baselineLoading={baselineLoading}
+        waitingForTransfer={!!data && !transfer && !loading}
         cancelled={cancelled}
         searchFailed={!!error || !!transferError}
         retryCount={Object.keys(retries).length}
@@ -227,8 +261,13 @@ export default function App() {
                 />
               </div>
               <SelfTransferResults
+                onSearch={startTransfers}
+                canSearch={!!data && !loading && !regularRequestChanged}
+                requestChanged={regularRequestChanged}
+                midpointFilter={midpointFilter}
+                onClearMidpoint={() => setMidpointFilter(null)}
                 progress={transfer}
-                loading={loading}
+                loading={loading && !baselineLoading}
                 error={transferError}
                 selectedId={selected?.id}
                 onSelect={(result) =>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { GlobeInstance } from 'globe.gl';
-import { routeView } from '../lib/globe';
+import { routeArcLayers, routeView } from '../lib/globe';
 import type { AirportDot, RouteArc } from '../lib/globe';
 import type { TransferProgress } from '../lib/self-transfer';
 
@@ -24,12 +24,16 @@ export default function FlightGlobe({
   dataError,
   missing,
   loading = false,
+  baselineLoading = true,
+  waitingForTransfer = false,
   cancelled = false,
   searchFailed = false,
   retryCount = 0,
   retryMessage,
   panelRef,
   panelCollapsed = false,
+  midpointFilter = null,
+  onToggleMidpoint,
 }: {
   dots: AirportDot[];
   airports: AirportDot[];
@@ -39,17 +43,21 @@ export default function FlightGlobe({
   dataError: string | null;
   missing: string[];
   loading?: boolean;
+  baselineLoading?: boolean;
+  waitingForTransfer?: boolean;
   cancelled?: boolean;
   searchFailed?: boolean;
   retryCount?: number;
   retryMessage?: string;
   panelRef?: RefObject<HTMLDivElement | null>;
   panelCollapsed?: boolean;
+  midpointFilter?: string | null;
+  onToggleMidpoint?: (code: string | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const globe = useRef<GlobeInstance | null>(null);
-  const latest = useRef({ dots, airports, arcs });
-  latest.current = { dots, airports, arcs };
+  const latest = useRef({ dots, airports, arcs, onToggleMidpoint });
+  latest.current = { dots, airports, arcs, onToggleMidpoint };
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string | null>(null);
@@ -85,7 +93,12 @@ export default function FlightGlobe({
           .pointRadius((d) => ((d as AirportDot).selected ? 0.38 : 0.27))
           .pointsTransitionDuration(0)
           .pointLabel((d) => tooltip(d as AirportDot))
-          .onPointClick((d) => setInspected((d as AirportDot).code))
+          .onPointClick((d) => {
+            const code = (d as AirportDot).code;
+            setInspected(code);
+            if (latest.current.dots.some((dot) => dot.code === code))
+              latest.current.onToggleMidpoint?.(code);
+          })
           .labelLat('lat')
           .labelLng('lng')
           .labelText('code')
@@ -96,19 +109,23 @@ export default function FlightGlobe({
           .labelResolution(3)
           .labelsTransitionDuration(0)
           .labelLabel((d) => tooltip(d as AirportDot))
-          .onLabelClick((d) => setInspected((d as AirportDot).code))
+          .onLabelClick((d) => {
+            const code = (d as AirportDot).code;
+            setInspected(code);
+            if (latest.current.dots.some((dot) => dot.code === code))
+              latest.current.onToggleMidpoint?.(code);
+          })
           .arcStartLat('startLat')
           .arcStartLng('startLng')
           .arcEndLat('endLat')
           .arcEndLng('endLng')
           .arcColor('color')
-          .arcStroke(0.65)
+          .arcStroke('stroke')
           .arcAltitudeAutoScale(0.28)
-          .arcDashLength((d) => ((d as RouteArc).ground ? 0.1 : 0.65))
-          .arcDashGap((d) => ((d as RouteArc).ground ? 0.06 : 0.18))
-          .arcDashAnimateTime(
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 2400,
-          )
+          .arcDashLength('dashLength')
+          .arcDashGap('dashGap')
+          .arcDashInitialGap('initialGap')
+          .arcDashAnimateTime('animateTime')
           .arcsTransitionDuration(0)
           .arcLabel((d) => {
             const el = document.createElement('span');
@@ -171,11 +188,22 @@ export default function FlightGlobe({
     const routeCodes = new Set(airports.map((a) => a.code));
     // Preserve midpoint status colours even when the selected route visits one.
     const points = [
-      ...dots.map((dot) => ({ ...dot, selected: routeCodes.has(dot.code) })),
+      ...dots.map((dot) => ({
+        ...dot,
+        selected: routeCodes.has(dot.code) || dot.code === midpointFilter,
+      })),
       ...airports.filter((a) => !dots.some((d) => d.code === a.code)),
     ];
-    globe.current.pointsData(points).labelsData(airports).arcsData(arcs);
-  }, [ready, dots, airports, arcs]);
+    globe.current.pointsData(points).labelsData(airports);
+  }, [ready, dots, airports, midpointFilter]);
+  useEffect(() => {
+    if (!ready || !globe.current) return;
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateArcs = () => globe.current?.arcsData(routeArcLayers(arcs, motion.matches));
+    updateArcs();
+    motion.addEventListener('change', updateArcs);
+    return () => motion.removeEventListener('change', updateArcs);
+  }, [ready, arcs]);
   useEffect(() => {
     if (ready)
       globe.current?.pointOfView(
@@ -199,10 +227,14 @@ export default function FlightGlobe({
         : complete
           ? 'Complete'
           : loading && !progress
-            ? 'Regular flights…'
+            ? baselineLoading
+              ? 'Regular flights…'
+              : 'Preparing self-transfers…'
             : progress
               ? 'Searching midpoints…'
-              : 'Ready to search';
+              : waitingForTransfer
+                ? 'Ready for self-transfer'
+                : 'Ready to search';
   return (
     <section className="globe-stage" aria-label="Flight route globe">
       <div
@@ -264,22 +296,35 @@ export default function FlightGlobe({
         {!ready && !error && <p role="status">Loading globe…</p>}
         <div className="globe-inspector">
           <select
-            aria-label="Inspect midpoint"
-            value={dots.some((dot) => dot.code === inspected) ? inspected! : ''}
+            aria-label="Filter self-transfer by midpoint"
+            value={midpointFilter ?? ''}
             onChange={(e) => {
               setInspected(e.target.value || null);
+              onToggleMidpoint?.(e.target.value || null);
               const dot = dots.find((d) => d.code === e.target.value);
               if (dot)
                 globe.current?.pointOfView({ lat: dot.lat, lng: dot.lng, altitude: 1.2 }, 700);
             }}
           >
-            <option value="">Inspect an airport</option>
+            <option value="">All midpoints</option>
+            {midpointFilter && !dots.some((dot) => dot.code === midpointFilter) && (
+              <option value={midpointFilter}>{midpointFilter}</option>
+            )}
             {dots.map((dot) => (
               <option value={dot.code} key={dot.code}>
                 {dot.code} · {dot.status}
               </option>
             ))}
           </select>
+          {midpointFilter && (
+            <button
+              type="button"
+              className="clear-map-filter"
+              onClick={() => onToggleMidpoint?.(null)}
+            >
+              Show all
+            </button>
+          )}
           {inspect && (
             <span style={{ color: inspect.color }}>
               {inspect.code} · {inspect.status}

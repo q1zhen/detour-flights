@@ -47,6 +47,13 @@ export function SearchForm({
       from: values.from.trim(),
       to: values.to.trim(),
       filters: candidateFilters,
+      requestKey: JSON.stringify(buildRequest(values)),
+      transferOptions: {
+        minBufferMinutes: transferWindow[0],
+        maxBufferMinutes: transferWindow[1],
+        candidateFilters: { ...candidateFilters },
+        preferenceScope,
+      },
       allow: airlineCodes(values.allowConnections),
       block: airlineCodes(values.blockConnections),
       signature: JSON.stringify({ values, candidateFilters, transferWindow, preferenceScope }),

@@ -51,12 +51,6 @@ export function SearchOptions({
           disabled={disabled}
         />
       </div>
-      <div className="filter-footer">
-        <span>Local airport times</span>
-        {(!isAnyTime(values.departureTime) || !isAnyTime(values.arrivalTime)) && (
-          <span>Filters apply when you search</span>
-        )}
-      </div>
       <div className="options-grid">
         <div className="field">
           <label htmlFor="stop-limit">Stops · regular / long leg</label>

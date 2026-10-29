@@ -30,10 +30,10 @@ Time, layover, and connection filters narrow the results returned by Google; the
 
 ## Results
 
-Compact rows show local times, connections, **total journey duration including layovers**, airlines, fare, and emissions. Sort by provider order, price, or total journey duration. Expanded details show:
+Compact rows show local times, connections, **total journey duration including layovers**, airlines, cabin class, and fare. Stops and total duration share a line above the route, with each connection’s layover duration below its airport code. Sort by provider order, price, or total journey duration. Expanded details show:
 
 - A continuous itinerary timeline with local dates/times, airport names, segment duration, flight number, aircraft, and legroom.
-- Highlighted **provider-supplied layover durations** and airport-change notices. Missing durations stay unavailable; the app no longer estimates them from wall clocks.
+- Plain-text **provider-supplied layover durations**, dotted layover timeline sections, and airport-change notices. Missing durations stay unavailable; the app no longer estimates them from wall clocks.
 - An exact Google Flights itinerary link, when available. Carrier support and baggage links are clearly separate.
 - Best-effort checked-baggage hints with a reminder to confirm with the airline. The API’s numeric refundability code has no documented meaning, so the UI does not infer refund terms from it.
 
@@ -43,7 +43,7 @@ Round trips remain disabled and multi-city is unsupported. No booking occurs in 
 
 ## Self-transfer search
 
-Regular results appear first. A separate column then fills with two-ticket options,
+Regular search runs on its own. Once it finishes, click **Search self-transfers** in the second column to start the two-ticket search. Available options stream into that column immediately,
 ranked by combined price and then elapsed journey duration. The full-screen globe shows candidate airports as status dots: grey for pending,
 red for no results, yellow for price cutoffs, and green as soon as a valid result
 arrives. Retrying searches stay grey unless they already found a result. Inspect a dot (or use the keyboard-accessible airport picker) for its status.
@@ -69,12 +69,13 @@ only the original departure/final arrival. Connection allow/block filters includ
 the midpoint as well as within-ticket connections. The self-transfer buffer is
 independent of within-ticket layover limits.
 
-Midpoint-filter sliders tune the actual candidate selection: distance multiplier
-`ratio` (1–3, step 0.05; default 1.25), extra distance `slack_km` (0–3,000 km,
-step 50; default 300), and minimum outbound routes `min_deg` (0–500, step 1;
-default 10). A compact formula shows the combined distance allowance. Reset
-restores all three defaults. Values are captured on submission and validated
-before use; these client-side settings are never sent to the flight API.
+Midpoint-filter sliders tune the actual candidate selection: **Extra route distance**
+(0–200%, in 5% steps; default 30%) and **Minimum destinations** (0–500; default 70).
+The percentage maps to `ratio = 1 + percentage / 100`. A fixed 300 km allowance is
+added to that distance limit; it has no form control, and non-300 values are rejected
+by search-option validation. Minimum destinations counts the midpoint airport’s
+outbound destinations in the route graph. Reset restores both defaults. These
+client-side settings are never sent to the flight API.
 
 Self-transfer cards use the same route timeline, local endpoint times, stop
 markers, total duration and price layout as regular flights. The ticket boundary
@@ -89,7 +90,7 @@ Each midpoint keeps the long-leg-first search, with pricing and matching overlap
 1. Use the union of outgoing neighbors of the origin and incoming neighbors of the
    destination, excluding both endpoints. Keep hubs meeting the selected minimum outgoing
    degree and total great-circle distance no greater than `ratio × direct + slack_km`
-   (defaults: 10 routes, 1.25× and 300 km). Use airport codes found in the graph; city codes remain supported for
+   (defaults: 70 destinations, 1.3× and 300 km). Use airport codes found in the graph; city codes remain supported for
    regular searches but cannot be used to place a self-transfer geographically.
 2. Price each hub's longer leg, with no transfer-time restriction. If that is leg
    2, query the requested date and following date; otherwise query leg 1 on the
@@ -144,7 +145,7 @@ The integration targets the camelCase API documented on 2026-10-28 (upstream `go
 - Requests use `fromAirport`, `toAirport`, `maxStops`, `infantsInSeat`, and `infantsOnLap`. Unrestricted `maxStops` is omitted, never `null`. Unknown/obsolete fields are not sent.
 - Responses use `segments`, `googleFlightsUrl`, object-based dates/times, `totalDurationMinutes`, and `layovers`.
 - `filters` accepts `departureTime`, `arrivalTime`, `layover`, and `connectionAirports`.
-- Emissions are grams, displayed as kilograms. Fare policy fields are hints, not confirmed conditions. Raw booking tokens and undocumented policy codes are retained in the typed response but not presented as user-facing actions.
+- Carbon data is not displayed. Fare policy fields are hints, not confirmed conditions. Raw booking tokens and undocumented policy codes are retained in the typed response but not presented as user-facing actions.
 - `/health` provides the header status. `/flights` uses a 30-second client timeout around the API’s 20-second upstream timeout.
 
 ## Source layout
@@ -196,7 +197,9 @@ are not mistaken for new availability. A new search clears the selected trip.
 
 Opening a regular or self-transfer card selects that one trip and closes the previous
 selection. The globe draws every actual segment, labels every known airport by IATA,
-and colours the two tickets cyan and purple. Airport changes use a yellow dashed link.
+with a thin, continuous amber line and a single warm highlight travelling along each
+flight segment. A soft amber glow keeps the route readable against the map. Airport
+changes retain an amber line without the flight animation.
 Missing coordinates are reported without inventing locations. Nested ticket details
 remain independent of the single selected trip. Recenter restores the route view;
 date-line routes use a spherical centre. Reduced-motion settings disable route animation.
@@ -209,7 +212,8 @@ also offers **Any**, and Reset restores unconstrained layovers. Defaults stay 2�
 The globe library is loaded separately from the search UI. Land geometry is bundled
 locally (see data/README.md); no external basemap service is required. If WebGL fails,
 search and results remain usable. Tests cover preview filtering, status colours,
-partial-result precedence, segment/airport-transfer geometry, missing coordinates,
+partial-result precedence, midpoint result filtering, continuous route layers,
+segment/airport-transfer geometry, missing coordinates,
 date-line centring, discrete durations and exclusive selection markup.
 
 All regular and self-transfer price requests use the same `searchFlights` retry
@@ -224,3 +228,14 @@ backoff, recovery, Retry-After, and cancellation without repeated live requests.
 The land layer uses 1-degree polygon-cap tessellation and a small surface offset
 to keep cap triangles from intersecting the globe mesh when zoomed in. Polygon
 transitions are disabled so the caps never animate through the ocean surface.
+
+Click a midpoint dot (or its IATA label) to show only self-transfer trips through
+that airport. Click it again to show all midpoints. The result heading and the globe
+picker also offer a clear action; the picker provides keyboard access to the same
+filter. Regular results and fare comparisons are unchanged. Filtering clears a
+selected self-transfer from another midpoint, while keeping a selected regular
+flight. New searches reset the midpoint filter. Results still stream into the
+filtered list as they arrive. The route highlight is separate from the continuous
+line, so it never creates gaps; reduced motion removes the travelling highlight.
+
+Self-transfer window, scope, and midpoint filters can be adjusted before manually starting or rerunning self-transfer search. Changing regular-flight criteria requires a new regular search first, so price comparisons always use the same enquiry.

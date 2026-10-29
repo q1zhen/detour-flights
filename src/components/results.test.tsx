@@ -80,7 +80,10 @@ it('renders connecting one-way flights without return details', () => {
   expect(html).toContain('layover');
   expect(html).toContain('timeline-start');
   expect(html).toContain('timeline-end');
-  expect(html).toContain('274 kg CO₂');
+  expect(html).not.toContain('CO₂');
+  expect(html).not.toContain('Local airport times');
+  expect(html).toContain('1 stop · 8h 0m');
+  expect(html).toContain('class="connection-duration">2h 0m</small>');
   expect(html).not.toContain('Return');
   expect(html).not.toContain('Round-trip');
 });
@@ -139,12 +142,12 @@ it('renders accessible two-handle time bars and disables them during searches', 
   const html = renderToStaticMarkup(
     <SearchForm onSearch={() => {}} loading={true} onCancel={() => {}} />,
   );
-  expect(html.match(/role="slider"/g)).toHaveLength(11);
+  expect(html.match(/role="slider"/g)).toHaveLength(10);
   expect(html).toContain('aria-label="Departure time earliest"');
   expect(html).toContain('aria-label="Arrival time latest"');
   expect(html).toContain('aria-valuetext="00:00"');
   expect(html).toContain('aria-valuetext="23:59"');
-  expect(html.match(/aria-disabled="true"/g)).toHaveLength(7);
+  expect(html.match(/aria-disabled="true"/g)).toHaveLength(6);
 });
 
 import { SelfTransferResults } from './SelfTransferResults';
@@ -241,16 +244,17 @@ it('distinguishes partial failures, cancellation and unavailable baseline prices
 });
 
 import { SelfTransferCard } from './SelfTransferCard';
-it('shows the three candidate sliders with the pseudocode defaults and units', () => {
+it('shows percentage and destination sliders with the new defaults and no distance allowance control', () => {
   const html = renderToStaticMarkup(
     <SearchForm onSearch={() => {}} loading={false} onCancel={() => {}} />,
   );
-  expect(html).toContain('aria-label="Distance multiplier"');
-  expect(html).toContain('aria-valuetext="1.25×"');
-  expect(html).toContain('aria-label="Extra distance"');
-  expect(html).toContain('aria-valuetext="300 km"');
-  expect(html).toContain('aria-label="Min outbound routes"');
-  expect(html).toContain('aria-valuetext="10"');
+  expect(html).toContain('aria-label="Extra route distance"');
+  expect(html).toContain('aria-valuetext="30%"');
+  expect(html).toContain('aria-valuemin="0" aria-valuemax="200"');
+  expect(html).not.toContain('aria-label="Extra distance"');
+  expect(html).not.toContain('300 km');
+  expect(html).toContain('aria-label="Minimum destinations"');
+  expect(html).toContain('aria-valuetext="70"');
   expect(html).toContain('Reset midpoint filters');
 });
 it('shows a combined timeline and marks only the self-transfer boundary among multiple stops', () => {
@@ -280,7 +284,9 @@ it('shows a combined timeline and marks only the self-transfer boundary among mu
   expect(summary).toContain('Arrival date offset +1d');
   expect(summary).toContain('2 stops');
   expect(summary).toContain('ORD');
-  expect(summary).toContain('LAX<em>Self-transfer</em>');
+  expect(summary).toContain(
+    'LAX<small class="connection-duration">2h 0m</small><em>Self-transfer</em>',
+  );
   expect(summary.match(/self-transfer-marker/g)).toHaveLength(1);
   expect(summary).toContain('29h 0m');
   expect(html).toContain('Ticket 1 · To LAX');
@@ -390,4 +396,46 @@ it('shows obvious progress during baseline requests and retries, with a project 
   expect(html).toContain('href="https://github.com/q1zhen/detour-flights"');
   const bar = html.match(/<progress[^>]*>/)?.[0];
   expect(bar).not.toContain(' value=');
+});
+
+it('filters only self-transfer trips by midpoint, counts matching results, and provides an explicit clear action', () => {
+  const second = { ...transferProgress.results[0], id: 'other', midpoint: 'BOS' };
+  const progress = { ...transferProgress, results: [transferProgress.results[0], second] };
+  const render = (midpointFilter: string | null) =>
+    renderToStaticMarkup(
+      <SelfTransferResults
+        progress={progress}
+        loading
+        error={null}
+        currency="USD"
+        midpointFilter={midpointFilter}
+        onClearMidpoint={() => {}}
+      />,
+    );
+  const filtered = render('ORD');
+  expect(filtered).toContain('Via ORD');
+  expect(filtered).not.toContain('Via BOS');
+  expect(filtered).toContain('1 options');
+  expect(filtered).toContain('aria-label="Show all self-transfer results"');
+  const all = render(null);
+  expect(all).toContain('Via BOS');
+  expect(all).toContain('Via ORD');
+  expect(all).toContain('2 options');
+  expect(render('LHR')).toContain('0 options');
+});
+
+it('requires an explicit self-transfer action after regular results are ready', () => {
+  const props = {
+    progress: null,
+    loading: false,
+    error: null,
+    currency: 'USD',
+    onSearch: () => {},
+  };
+  const waiting = renderToStaticMarkup(<SelfTransferResults {...props} />);
+  expect(waiting).toContain('Search self-transfers');
+  expect(waiting).toContain('disabled=""');
+  const ready = renderToStaticMarkup(<SelfTransferResults {...props} canSearch />);
+  expect(ready).not.toContain('disabled=""');
+  expect(ready).toContain('0 options · Ready');
 });

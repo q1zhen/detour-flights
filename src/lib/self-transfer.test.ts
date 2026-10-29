@@ -25,7 +25,10 @@ function airport(lon: number, out: string[] = [], incoming: string[] = []): Rout
     in: incoming,
   };
 }
-const degree = Array.from({ length: 10 }, (_, i) => `E${String.fromCharCode(65 + i)}A`);
+const degree = Array.from(
+  { length: 70 },
+  (_, i) => `E${String.fromCharCode(65 + Math.floor(i / 26))}${String.fromCharCode(65 + (i % 26))}`,
+);
 function graph(
   hubs: [string, number][] = [
     ['HAA', 1],
@@ -579,7 +582,7 @@ it('stops emitting after cancellation while retaining already published results'
   }
 });
 
-it('uses all three submitted midpoint filters without sending them to the flight API', async () => {
+it('uses percentage and destination filters with a fixed 300 km allowance, without sending them to the API', async () => {
   const g = graph([['HAA', -2]]);
   const query = vi.fn(async (next: SearchRequest) => {
     expect(next).not.toHaveProperty('candidateFilters');
@@ -593,20 +596,22 @@ it('uses all three submitted midpoint filters without sending them to the flight
         options: { ...DEFAULT_TRANSFER_OPTIONS, candidateFilters: { ratio, slackKm, minDegree } },
       })
     ).midpoints.map((h) => h.code);
-  expect(await selected(1, 0, 10)).toEqual([]);
+  expect(await selected(1, 300, 70)).toEqual([]);
   expect(query).not.toHaveBeenCalled();
-  expect(await selected(1.25, 0, 10)).toEqual(['HAA']);
-  expect(await selected(1, 500, 10)).toEqual(['HAA']);
-  expect(await selected(1.25, 300, 11)).toEqual([]);
-  expect(await selected(1.25, 300, 10)).toEqual(['HAA']);
+  expect(await selected(1.3, 300, 70)).toEqual(['HAA']);
+  expect(await selected(1.3, 300, 71)).toEqual([]);
+  expect(await selected(1.3, 300, 70)).toEqual(['HAA']);
 });
 it('validates candidate filter bounds while retaining default options for existing searches', () => {
   expect(validateTransferOptions(DEFAULT_TRANSFER_OPTIONS)).toBe(true);
-  const defaults = { ratio: 1.25, slackKm: 300, minDegree: 10 };
+  const defaults = { ratio: 1.3, slackKm: 300, minDegree: 70 };
   for (const patch of [
     { ratio: NaN },
     { ratio: 0.9 },
     { ratio: 3.1 },
+    { slackKm: 0 },
+    { slackKm: 299 },
+    { slackKm: 301 },
     { slackKm: -1 },
     { slackKm: 3001 },
     { minDegree: 0.5 },
@@ -622,7 +627,7 @@ it('validates candidate filter bounds while retaining default options for existi
   expect(
     validateTransferOptions({
       ...DEFAULT_TRANSFER_OPTIONS,
-      candidateFilters: { ratio: 3, slackKm: 3000, minDegree: 500 },
+      candidateFilters: { ratio: 3, slackKm: 300, minDegree: 500 },
     }),
   ).toBe(true);
 });
