@@ -30,7 +30,7 @@ Time, layover, and connection filters narrow the results returned by Google; the
 
 ## Results
 
-Compact rows show local times, connections, **total journey duration including layovers**, airlines, cabin class, and fare. Departure/arrival times sit above the timeline; endpoint airport codes sit below their dots, aligned with connection nodes. Stops and total duration sit above the route. Connection codes and layover durations sit below their markers, with the self-transfer label above its blue dot. A divided footer groups airlines/classes separately from the fare. On wider cards, the stop/duration summary sits between the endpoint times. Sort by provider order, price, or total journey duration. Expanded details show:
+Compact rows show local times, connections, **total journey duration including layovers**, airlines, cabin class, and fare. Departure/arrival times sit above the timeline; endpoint airport codes sit below their dots, aligned with connection nodes. Stops and total duration sit above the route. Connection codes and layover durations sit below their markers, with the self-transfer label above its blue dot. A compact footer groups airlines/classes separately from the fare without internal dividers. On wider cards, the stop/duration summary sits between the endpoint times. Sort by provider order, price, or total journey duration. Expanded details show:
 
 - A continuous itinerary timeline with local dates/times, airport names, segment duration, flight number, aircraft, and legroom.
 - Plain-text **provider-supplied layover durations**, dotted layover timeline sections, and airport-change notices. Missing durations stay unavailable; the app no longer estimates them from wall clocks.

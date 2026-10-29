@@ -672,17 +672,19 @@
   margin: 2px 0 0;
 }
 
-/* Collapsed cards share a route preview above a divided fare footer. */
+/* Compact route preview and fare summary. */
 .floating-panel .flight-card {
+  --card-inset: 16px;
   container-type: inline-size;
   border-radius: 12px;
 }
 .floating-panel .flight-row {
   display: block;
+  min-height: 0;
   padding: 0;
 }
 .floating-panel .flight-route {
-  padding: 8px 16px 2px;
+  padding: 5px var(--card-inset) 0;
   gap: 2px;
   grid-template-columns: 1fr auto 1fr;
 }
@@ -703,7 +705,7 @@
 .floating-panel .route-track,
 .floating-panel .self-transfer-route .route-track {
   margin: 8px 0 0;
-  padding-bottom: 33px;
+  padding-bottom: 31px;
 }
 .floating-panel .endpoint-dot {
   width: 7px;
@@ -735,8 +737,7 @@
   grid-template-columns: minmax(0, 1fr) auto 12px;
   align-items: center;
   gap: 8px;
-  border-top: 1px solid #e0e5ec;
-  padding: 7px 10px;
+  padding: 7px var(--card-inset);
 }
 .floating-panel .flight-summary-footer > .flight-meta,
 .floating-panel .flight-summary-footer > .flight-price,
@@ -751,7 +752,6 @@
   font-size: 13px;
 }
 .floating-panel .flight-summary-footer .flight-price {
-  border-left: 1px solid #e0e5ec;
   padding-left: 10px;
   align-self: stretch;
   justify-content: center;
@@ -775,7 +775,7 @@
   display: none;
 }
 .floating-panel .flight-details[open] > .flight-row > .flight-summary-footer {
-  border-top: 0;
+  padding-block: 5px;
 }
 .floating-panel
   .flight-details[open]
@@ -807,17 +807,17 @@
     font-size: 25px;
   }
   .floating-panel .flight-route {
-    padding: 10px 12px 2px;
+    padding: 5px var(--card-inset) 0;
   }
   .flight-summary-footer {
-    padding: 7px 12px;
+    padding: 7px var(--card-inset);
     gap: 14px;
   }
 }
 
 .floating-panel .nonstop-route .route-track {
   margin-top: 8px;
-  padding-bottom: 30px;
+  padding-bottom: 24px;
 }
 .floating-panel .flight-details > .flight-row > .flight-summary-footer > .details-chevron {
   transform: none;
@@ -851,5 +851,38 @@
 }
 
 .floating-panel .self-transfer-route .route-track {
-  margin-top: 17px;
+  margin-top: 14px;
+}
+
+/* Align endpoint labels with the times and fare content. */
+.floating-panel .route-track {
+  margin-inline: 0;
+}
+
+.floating-panel .flight-details:not([open]) > .flight-row > .flight-summary-footer {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-block: 4px;
+}
+.floating-panel
+  .flight-details:not([open])
+  > .flight-row
+  > .flight-summary-footer
+  > .details-chevron {
+  display: none;
+}
+.floating-panel .flight-details:not([open]) > .flight-row > .flight-summary-footer > .flight-price {
+  padding-left: 0;
+}
+
+.floating-panel .endpoint-marker:first-child > span {
+  left: 0;
+  transform: none;
+}
+.floating-panel .endpoint-marker:last-child > span {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.floating-panel .flight-details-content {
+  padding: 8px var(--card-inset);
 }
