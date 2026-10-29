@@ -26,7 +26,7 @@ describe('result rendering edge cases', () => {
     );
     expect(html).toContain('Price unavailable');
     expect(html).toContain('Airline unavailable');
-    expect(html).toContain('Exact booking link unavailable');
+    expect(html).toContain('Booking link unavailable');
     expect(html).not.toContain('href=');
   });
   it('shows provider metadata even when there are no flights', () => {
@@ -43,7 +43,7 @@ describe('result rendering edge cases', () => {
         loading={false}
       />,
     );
-    expect(html).toContain('No flights found this time.');
+    expect(html).toContain('No flights found');
     expect(html).toContain('American');
     expect(html).toContain('Oneworld');
   });
@@ -59,7 +59,7 @@ describe('result rendering edge cases', () => {
         cheapest={false}
       />,
     );
-    expect(html).toContain('View flight');
+    expect(html).toContain('Google Flights');
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('rel="noopener noreferrer"');
@@ -70,7 +70,6 @@ it('renders connecting one-way flights without return details', () => {
   const html = renderToStaticMarkup(
     <FlightCard flight={oneWayFlight} currency="USD" cheapest={false} />,
   );
-  expect(html).toContain('One-way flight');
   expect(html).toContain('1 stop');
   expect(html).toContain('6h 0m');
   expect(html).toContain('274 kg CO₂');

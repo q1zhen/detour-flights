@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowTopRightIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
+import { PaperPlaneIcon } from '@radix-ui/react-icons';
 import { API_URL } from '../lib/api';
 
 export function AppHeader() {
@@ -28,20 +28,13 @@ export function AppHeader() {
         </span>
         detour<span className="brand-period">.</span>
       </a>
-      <nav aria-label="Main navigation">
-        <span className="nav-active">Flight search</span>
-        <a href={API_URL} target="_blank" rel="noopener noreferrer">
-          API docs
-          <ArrowTopRightIcon />
-        </a>
-      </nav>
       <div className={`service-status ${status}`}>
         <span />
         {status === 'checking'
           ? 'Connecting'
           : status === 'online'
-            ? 'Flight service online'
-            : 'Service status unavailable'}
+            ? 'Live'
+            : 'Service unavailable'}
       </div>
     </header>
   );

@@ -45,20 +45,7 @@ export default function App() {
       </a>
       <AppHeader />
       <main id="main-content">
-        <section className="hero">
-          <div className="eyebrow">
-            <span /> GO A LITTLE FURTHER
-          </div>
-          <h1>
-            Good trips start
-            <br className="mobile-break" /> with a little <span>detour.</span>
-          </h1>
-          <p>Find your flight. Make room for the unexpected.</p>
-          <div className="hero-orbit" aria-hidden="true">
-            <div />
-            <span>✦</span>
-          </div>
-        </section>
+        <h1 className="sr-only">Flight search</h1>
         <SearchForm
           onSearch={search}
           loading={loading}
@@ -82,30 +69,16 @@ export default function App() {
                   ))}
                 </ul>
               )}
-              <span className="error-help">
-                Your search settings are saved above. Adjust them or try searching again.
-              </span>
             </div>
           </Callout.Root>
         )}
         {cancelled && (
           <p role="status" className="cancelled-message">
-            Search cancelled. Your settings are ready when you are.
+            Search cancelled.
           </p>
         )}
         {!error && <FlightResults data={data} request={request} loading={loading} />}
       </main>
-      <footer>
-        <span className="footer-brand">detour.</span>
-        <p>Less searching. More going.</p>
-        <span>
-          Flight data via{' '}
-          <a href="https://gflight.q1z.dev" target="_blank" rel="noopener noreferrer">
-            gflight
-          </a>{' '}
-          · Booking on Google Flights
-        </span>
-      </footer>
     </div>
   );
 }

@@ -26,11 +26,11 @@ export function TravelerPicker({
         </Button>
       </Popover.Trigger>
       <Popover.Content width="330px" maxWidth="calc(100vw - 32px)" aria-label="Travelers">
-        <Text as="p" weight="bold" mb="4">
-          Who’s coming along?
+        <Text as="p" weight="bold" mb="3">
+          Travelers
         </Text>
         {groups.map(({ key, label, note }) => (
-          <Flex key={key} align="center" justify="between" gap="3" mb="4">
+          <Flex key={key} align="center" justify="between" gap="3" mb="3">
             <div>
               <Text as="p" size="2" weight="medium">
                 {label}
@@ -73,7 +73,7 @@ export function TravelerPicker({
           size="1"
           color={total < 1 || value.infants_on_lap > value.adults ? 'red' : 'gray'}
         >
-          1–9 travelers. Each infant on a lap needs an adult.
+          Max 9 travelers · One lap infant per adult.
         </Text>
         <Flex justify="end" mt="3">
           <Popover.Close>

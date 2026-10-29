@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Callout, Flex, IconButton, Badge, TextField } from '@radix-ui/themes';
+import { Button, Callout, IconButton, Badge, TextField } from '@radix-ui/themes';
 import { ExclamationTriangleIcon, MagnifyingGlassIcon, SwitchIcon } from '@radix-ui/react-icons';
 import { buildRequest, initialValues, validateSearch } from '../lib/search';
 import type { Cabin, SearchRequest, SearchValues } from '../lib/types';
@@ -57,12 +57,13 @@ export function SearchForm({
         </div>
         <div className="route-grid one-way">
           <label className="field route-field">
-            <span>From</span>
+            <span>
+              From <small>IATA</small>
+            </span>
             <TextField.Root
               size="3"
               value={values.from}
               placeholder="JFK"
-              aria-describedby="airport-help"
               onChange={(e) => update('from', e.target.value.toUpperCase())}
               maxLength={3}
               autoComplete="off"
@@ -82,12 +83,13 @@ export function SearchForm({
             <SwitchIcon />
           </IconButton>
           <label className="field route-field">
-            <span>To</span>
+            <span>
+              To <small>IATA</small>
+            </span>
             <TextField.Root
               size="3"
               value={values.to}
               placeholder="LAX"
-              aria-describedby="airport-help"
               onChange={(e) => update('to', e.target.value.toUpperCase())}
               maxLength={3}
               autoComplete="off"
@@ -103,10 +105,11 @@ export function SearchForm({
               onChange={(e) => update('departure', e.target.value)}
             />
           </label>
+          <Button className="search-button" size="3" type="submit" loading={loading}>
+            <MagnifyingGlassIcon width="18" height="18" />
+            Search
+          </Button>
         </div>
-        <p className="field-help" id="airport-help">
-          Use three-letter airport codes, like JFK for New York or LHR for London.
-        </p>
         <SearchOptions values={values} update={update} />
       </fieldset>
       {errors.length > 0 && (
@@ -115,7 +118,6 @@ export function SearchForm({
             <ExclamationTriangleIcon />
           </Callout.Icon>
           <div className="callout-message">
-            <span>Please check your search.</span>
             <ul>
               {errors.map((error) => (
                 <li key={error}>{error}</li>
@@ -124,20 +126,17 @@ export function SearchForm({
           </div>
         </Callout.Root>
       )}
-      <div className="search-bottom">
-        <span className="search-hint">A change of scenery is a search away.</span>
-        <Flex gap="3" align="center">
-          {loading && (
-            <Button type="button" variant="ghost" color="gray" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <Button className="search-button" size="3" type="submit" loading={loading}>
-            <MagnifyingGlassIcon width="18" height="18" />
-            Search flights
-          </Button>
-        </Flex>
-      </div>
+      {loading && (
+        <Button
+          className="cancel-search"
+          type="button"
+          variant="ghost"
+          color="gray"
+          onClick={onCancel}
+        >
+          Cancel search
+        </Button>
+      )}
     </form>
   );
 }

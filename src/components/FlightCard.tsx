@@ -1,4 +1,4 @@
-import { Badge, Button } from '@radix-ui/themes';
+import { Badge, Button, Tooltip } from '@radix-ui/themes';
 import { ArrowTopRightIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import type { Flight } from '../lib/types';
 import {
@@ -29,89 +29,87 @@ export function FlightCard({
       className="flight-card"
       aria-label={`${airlines}, ${formatPrice(flight.price, currency)}`}
     >
-      <div className="flight-main has-directions">
-        <div className="airline-cell">
-          <div className="airline-mark" aria-hidden="true">
-            {airlines.slice(0, 1)}
-          </div>
-          <div>
-            <strong>{airlines}</strong>
-            <span className="muted">One-way flight</span>
-            {carbon && (
-              <span className={carbon.difference < 0 ? 'carbon-lower' : 'carbon-neutral'}>
-                {carbon.label}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flight-directions">
-          <FlightDirection label="Flight" segments={segments} />
-        </div>
-        <div className="flight-price">
-          {cheapest && (
-            <Badge color="green" variant="soft" size="1">
-              Lowest price
-            </Badge>
-          )}
-          <strong>{formatPrice(flight.price, currency)}</strong>
-          <span className="muted">{currency} · itinerary total</span>
-        </div>
-      </div>
       <details className="flight-details">
-        <summary>
-          Flight details <ChevronDownIcon />
+        <summary
+          className="flight-row"
+          aria-label={`Flight details: ${airlines}, ${formatPrice(flight.price, currency)}`}
+        >
+          <FlightDirection segments={segments} />
+          <span className="flight-meta">
+            <Tooltip content="Flight time excludes layovers">
+              <strong>
+                {formatDuration(flightMinutes(flight))} <small>in air</small>
+              </strong>
+            </Tooltip>
+            <span>{airlines}</span>
+          </span>
+          <span className="flight-carbon">
+            {flight.carbon?.emission > 0 ? (
+              <>
+                <span>{(flight.carbon.emission / 1000).toLocaleString()} kg CO₂</span>
+                {carbon && (
+                  <span className={carbon.difference < 0 ? 'carbon-lower' : 'muted'}>
+                    {carbon.difference === 0
+                      ? 'Typical'
+                      : `${carbon.difference > 0 ? '+' : ''}${carbon.difference}% vs. typical`}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="muted">CO₂ unavailable</span>
+            )}
+          </span>
+          <span className="flight-price">
+            <strong>{formatPrice(flight.price, currency)}</strong>
+            <span>
+              {currency}
+              {cheapest && (
+                <Badge size="1" color="green" variant="soft">
+                  Lowest
+                </Badge>
+              )}
+            </span>
+          </span>
+          <ChevronDownIcon className="details-chevron" width="18" height="18" />
         </summary>
         <div className="flight-details-content">
-          <div className="segment-list">
-            {segments.length ? (
-              segments.map((segment, index) => (
-                <SegmentDetails key={index} segment={segment} index={index} />
-              ))
-            ) : (
-              <p className="muted">Flight segment details weren’t provided.</p>
-            )}
-          </div>
-          <div className="flight-facts">
-            <div>
-              <span>Carbon emissions</span>
-              <strong>
-                {flight.carbon?.emission > 0
-                  ? `${(flight.carbon.emission / 1000).toLocaleString()} kg CO₂`
-                  : 'Unavailable'}
-              </strong>
-            </div>
-            <div>
-              <span>Typical for this route</span>
-              <strong>
-                {flight.carbon?.typical_on_route > 0
-                  ? `${(flight.carbon.typical_on_route / 1000).toLocaleString()} kg CO₂`
-                  : 'Unavailable'}
-              </strong>
-            </div>
-            <div>
-              <span>Flight time</span>
-              <strong>{formatDuration(flightMinutes(flight))}</strong>
-            </div>
-            <div>
-              <span>Provider result code</span>
-              <strong>{flight.type || 'Unavailable'}</strong>
-            </div>
-          </div>
-          <p className="field-help">
-            Times are local to each airport. Flight time excludes layovers. The provider does not
-            supply time zones or connection durations.
-          </p>
-          <div className="booking-row">
-            <p>View current pricing and booking options on Google Flights.</p>
+          <div className="details-toolbar">
+            <h3>Flight details</h3>
             {url ? (
-              <Button asChild>
+              <Button size="2" variant="soft" asChild>
                 <a href={url} target="_blank" rel="noopener noreferrer">
-                  View flight
+                  Google Flights
                   <ArrowTopRightIcon />
                 </a>
               </Button>
             ) : (
-              <span className="muted">Exact booking link unavailable</span>
+              <span className="muted">Booking link unavailable</span>
+            )}
+          </div>
+          <div className="segment-list">
+            {segments.length ? (
+              segments.map((segment, index) => (
+                <div key={index}>
+                  {index > 0 && (
+                    <div className="connection-note">
+                      {segments[index - 1].to_airport?.code === segment.from_airport?.code
+                        ? `Connection · ${segment.from_airport?.code || 'Airport unavailable'}`
+                        : `Transfer · ${segments[index - 1].to_airport?.code || '—'} → ${segment.from_airport?.code || '—'}`}
+                    </div>
+                  )}
+                  <SegmentDetails segment={segment} />
+                </div>
+              ))
+            ) : (
+              <p className="muted">Segment details unavailable</p>
+            )}
+          </div>
+          <div className="details-footnote">
+            <span>Local times · Flight time excludes layovers</span>
+            {flight.carbon?.typical_on_route > 0 && (
+              <span>
+                Typical emissions: {(flight.carbon.typical_on_route / 1000).toLocaleString()} kg CO₂
+              </span>
             )}
           </div>
         </div>

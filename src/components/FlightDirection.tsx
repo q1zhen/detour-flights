@@ -1,59 +1,49 @@
-import { ArrowRightIcon } from '@radix-ui/react-icons';
 import type { Segment } from '../lib/types';
-import {
-  arrivalDayOffset,
-  formatDate,
-  formatDuration,
-  formatTime,
-  segmentMinutes,
-} from '../lib/format';
+import { arrivalDayOffset, formatTime } from '../lib/format';
 
-export function FlightDirection({ label, segments }: { label: string; segments: Segment[] }) {
+export function FlightDirection({ segments }: { segments: Segment[] }) {
   const first = segments[0];
   const last = segments.at(-1);
-  const dayOffset = arrivalDayOffset(first?.departure, last?.arrival);
+  const offset = arrivalDayOffset(first?.departure, last?.arrival);
+  const connections = segments.slice(0, -1);
   return (
-    <section className="flight-direction" aria-label={`${label} flight summary`}>
-      <div className="direction-heading">
-        <strong>{label}</strong>
-        <span>{formatDate(first?.departure?.date)}</span>
-        <span>{formatDuration(segmentMinutes(segments))}</span>
-      </div>
-      {segments.length ? (
-        <div className="flight-route">
-          <div className="flight-time">
-            <strong>{formatTime(first?.departure)}</strong>
-            <span>{first?.from_airport?.code || '—'}</span>
-          </div>
-          <div className="route-line">
-            <span>
-              {segments.length === 1
-                ? 'Nonstop'
-                : `${segments.length - 1} ${segments.length === 2 ? 'stop' : 'stops'}`}
-            </span>
-            <div className="route-line-art">
+    <span className="flight-route">
+      <span className="route-endpoint">
+        <strong>{formatTime(first?.departure)}</strong>
+        <span>{first?.from_airport?.code || '—'}</span>
+      </span>
+      <span className="route-track">
+        <span className="stop-label">
+          {segments.length
+            ? connections.length
+              ? `${connections.length} ${connections.length === 1 ? 'stop' : 'stops'}`
+              : 'Nonstop'
+            : 'Stops unavailable'}
+        </span>
+        <span className="route-path" aria-hidden="true">
+          <i className="endpoint-dot" />
+          {connections.map((segment, index) => (
+            <span className="connection-marker" key={index}>
               <i />
-              <ArrowRightIcon />
-            </div>
-            <small>
-              {segments
-                .slice(0, -1)
-                .map((segment) => segment.to_airport?.code)
-                .filter(Boolean)
-                .join(' · ')}
-            </small>
-          </div>
-          <div className="flight-time">
-            <strong>
-              {formatTime(last?.arrival)}
-              {dayOffset && <sup aria-label={`Arrival date offset ${dayOffset}`}>{dayOffset}</sup>}
-            </strong>
-            <span>{last?.to_airport?.code || '—'}</span>
-          </div>
-        </div>
-      ) : (
-        <p className="muted">{label} details unavailable</p>
-      )}
-    </section>
+              <span>{segment.to_airport?.code || '—'}</span>
+            </span>
+          ))}
+          <i className="endpoint-dot" />
+        </span>
+        {connections.length > 0 && (
+          <span className="sr-only">
+            via{' '}
+            {connections.map((segment) => segment.to_airport?.code || 'unknown airport').join(', ')}
+          </span>
+        )}
+      </span>
+      <span className="route-endpoint route-arrival">
+        <strong>
+          {formatTime(last?.arrival)}
+          {offset && <sup aria-label={`Arrival date offset ${offset}`}>{offset}</sup>}
+        </strong>
+        <span>{last?.to_airport?.code || '—'}</span>
+      </span>
+    </span>
   );
 }
